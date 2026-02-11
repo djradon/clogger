@@ -394,22 +394,38 @@ Location: `~/.clogger/config.json`
 
 ## Implementation Phases
 
-### Phase 1: Core Parsing (MVP)
-- [ ] Set up TypeScript project structure with Node 20+, pnpm, Stricli
-- [ ] Define Provider interface and base types
-- [ ] Implement Claude Code provider (JSONL parser, session discovery)
-- [ ] Implement basic Markdown Exporter (per-message headings, Dendron frontmatter)
-- [ ] Implement `clogger export` command (manual export, no monitoring)
-- [ ] Basic error handling
+### Phase 0: Project Scaffolding ✅
+- [x] Set up TypeScript project structure with Node 20+, pnpm, Stricli
+- [x] Configure build pipeline: tsc (type-check, noEmit) → tsup (ESM bundle, code splitting)
+- [x] Configure vitest for testing
+- [x] Define Provider interface and base types (`src/providers/base.ts`, `src/types/index.ts`)
+- [x] Scaffold Claude Code provider (JSONL parser, session discovery)
+- [x] Scaffold core modules (monitor, detector, state, exporter)
+- [x] Scaffold all Stricli CLI commands (start, stop, status, export) with lazy loading
+- [x] Add `--thinking` and `--toolCalls` flags to export command
+
+**Deliverable**: Full project structure with all modules stubbed, build/test/typecheck passing
+
+### Phase 1: Core Parsing (MVP) ✅
+- [x] Two-phase JSONL parser: line parsing → turn aggregation (merges multi-entry assistant turns)
+- [x] Tool result linking via `tool_use_id`
+- [x] Sidechain filtering (`isSidechain: true` entries skipped)
+- [x] Skip non-message types (progress, file-history-snapshot, queue-operation)
+- [x] Model name in speaker headings (e.g., `claude-opus-4.6`)
+- [x] Markdown exporter: Dendron frontmatter, `renderToString()`, append-to-existing-file support
+- [x] Thinking blocks and tool calls in collapsible `<details>` sections
+- [x] `--thinking`, `--toolCalls`, `--italics` CLI flags override config defaults
+- [x] UTC timestamps via `date-fns-tz`
+- [x] 35 tests: parser (11), exporter (14), detector (8), e2e (2)
 
 **Deliverable**: CLI tool that can export existing Claude Code session JSONL to markdown
 
 ### Phase 2: Real-time Monitoring
-- [ ] Implement provider-aware Session Monitor with file watching (chokidar)
-- [ ] Implement In-Chat Command Detector (`::record`, `::stop`, etc.)
-- [ ] Implement State Manager with persistence (~/.clogger/state.json)
-- [ ] Implement `clogger start/stop` commands (daemon lifecycle)
-- [ ] Implement `clogger status` command (show active recordings)
+- [ ] Wire up Session Monitor with chokidar file watching
+- [ ] Test In-Chat Command Detector (`::record`, `::stop`) in live sessions
+- [ ] Test State Manager persistence and crash recovery (~/.clogger/state.json)
+- [ ] Test `clogger start/stop` daemon lifecycle
+- [ ] Test `clogger status` with active recordings
 - [ ] Incremental export (append new messages to existing files)
 
 **Deliverable**: Background daemon that monitors Claude Code sessions and auto-exports based on in-chat commands

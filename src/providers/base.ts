@@ -1,0 +1,19 @@
+import type { Message, Session } from "../types/index.js";
+
+/** Interface that all LLM providers must implement */
+export interface Provider {
+  /** Human-readable provider name (e.g., "claude-code") */
+  readonly name: string;
+
+  /** Discover active conversation sessions */
+  discoverSessions(): AsyncIterable<Session>;
+
+  /** Parse messages from a session file, starting from a byte offset */
+  parseMessages(
+    sessionFilePath: string,
+    fromOffset?: number,
+  ): AsyncIterable<{ message: Message; offset: number }>;
+
+  /** Resolve the workspace root for a given session file (if possible) */
+  resolveWorkspaceRoot?(sessionFilePath: string): string | undefined;
+}

@@ -1,0 +1,55 @@
+{
+  "name": "clogger",
+  "version": "0.1.0",
+  "description": "Chat logger — monitor and export LLM conversation logs to markdown",
+  "type": "module",
+  "bin": {
+    "clogger": "dist/cli.js"
+  },
+  "scripts": {
+    "prebuild": "tsc -p src/tsconfig.json",
+    "build": "tsup",
+    "dev": "tsx src/bin/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p src/tsconfig.json"
+  },
+  "keywords": [
+    "cli",
+    "llm",
+    "conversation",
+    "markdown",
+    "logger",
+    "claude",
+    "dendron"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@stricli/core": "^1.2.5",
+    "chalk": "^5.6.2",
+    "chokidar": "^5.0.0",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "nanoid": "^5.1.6",
+    "prompts": "^2.4.2",
+    "winston": "^3.19.0",
+    "yaml": "^2.8.2",
+    "zod": "^4.3.6"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "@types/prompts": "^2.4.9",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
