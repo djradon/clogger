@@ -148,14 +148,29 @@ export function renderToString(
   return parts.join("\n");
 }
 
-/** Export messages to a markdown file (creates or appends) */
+/** Export messages to a markdown file.
+ *
+ * Modes:
+ * - "create-or-append" (default) — create with frontmatter if new, append without frontmatter if exists
+ * - "overwrite" — always write full content with frontmatter (for full-session dumps)
+ */
 export async function exportToMarkdown(
   messages: Message[],
   outputPath: string,
-  options: ExportOptions,
+  options: ExportOptions & { mode?: "create-or-append" | "overwrite" },
 ): Promise<void> {
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
+  const mode = options.mode ?? "create-or-append";
+
+  if (mode === "overwrite") {
+    const title = options.title ?? path.basename(outputPath, ".md");
+    const content = renderToString(messages, { ...options, title });
+    await fs.writeFile(outputPath, content, "utf-8");
+    return;
+  }
+
+  // create-or-append mode
   let fileExists = false;
   try {
     await fs.access(outputPath);
