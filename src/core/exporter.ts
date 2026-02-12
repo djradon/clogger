@@ -76,7 +76,7 @@ export function formatMessage(message: Message, options: ExportOptions): string 
       .map((line) => {
         const trimmed = line.trim();
         if (!trimmed) return "";
-        return `*${line.replace(/\*/g, "\\*")}*`;
+        return `*${trimmed.replace(/\*/g, "\\*")}*`;
       })
       .join("\n");
     parts.push(italicized);
@@ -126,6 +126,14 @@ export function formatMessage(message: Message, options: ExportOptions): string 
   return parts.join("\n");
 }
 
+/** Check if a message has no visible content to render */
+function isEmptyMessage(message: Message, options: ExportOptions): boolean {
+  if (message.content.trim()) return false;
+  if (options.metadata.includeToolCalls && message.toolCalls?.length) return false;
+  if (options.metadata.includeThinking && message.thinkingBlocks?.length) return false;
+  return true;
+}
+
 /** Render messages to a markdown string (no file I/O) */
 export function renderToString(
   messages: Message[],
@@ -141,11 +149,31 @@ export function renderToString(
   }
 
   for (const message of messages) {
+    if (isEmptyMessage(message, options)) continue;
     parts.push(formatMessage(message, options));
     parts.push("");
   }
 
   return parts.join("\n");
+}
+
+/** Extract existing YAML frontmatter from a file, if present */
+async function extractExistingFrontmatter(
+  filePath: string,
+): Promise<string | null> {
+  let content: string;
+  try {
+    content = await fs.readFile(filePath, "utf-8");
+  } catch {
+    return null;
+  }
+
+  if (!content.startsWith("---\n")) return null;
+
+  const endIndex = content.indexOf("\n---", 4);
+  if (endIndex === -1) return null;
+
+  return content.slice(0, endIndex + 4);
 }
 
 /** Export messages to a markdown file.
@@ -164,9 +192,23 @@ export async function exportToMarkdown(
   const mode = options.mode ?? "create-or-append";
 
   if (mode === "overwrite") {
-    const title = options.title ?? path.basename(outputPath, ".md");
-    const content = renderToString(messages, { ...options, title });
-    await fs.writeFile(outputPath, content, "utf-8");
+    // Check if file already has frontmatter — preserve it
+    const existingFrontmatter = await extractExistingFrontmatter(outputPath);
+    if (existingFrontmatter) {
+      const body = renderToString(messages, {
+        ...options,
+        includeFrontmatter: false,
+      });
+      await fs.writeFile(
+        outputPath,
+        existingFrontmatter + "\n\n" + body,
+        "utf-8",
+      );
+    } else {
+      const title = options.title ?? path.basename(outputPath, ".md");
+      const content = renderToString(messages, { ...options, title });
+      await fs.writeFile(outputPath, content, "utf-8");
+    }
     return;
   }
 
