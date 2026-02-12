@@ -50,7 +50,7 @@ function formatMessageHeading(
     speaker = speakerNames?.assistant ?? "Claude";
   }
   const formatted = formatInTimeZone(date, "UTC", "yyyy-MM-dd_HHmm_ss");
-  return `## ${speaker}_${formatted}`;
+  return `# ${speaker}_${formatted}`;
 }
 
 /** Format a single message to markdown */

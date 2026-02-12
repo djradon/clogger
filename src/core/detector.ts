@@ -4,6 +4,8 @@ const COMMAND_PATTERN = /^::(\w+)\s*(.*)$/i;
 
 const VALID_COMMANDS = new Set<InChatCommandName>([
   "record",
+  "export",
+  "capture",
   "stop",
   "pause",
   "resume",

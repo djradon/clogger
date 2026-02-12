@@ -43,13 +43,13 @@ describe("end-to-end export", () => {
       expect(content).toMatch(/id: \w+/);
 
       // User message — italicized with custom name
-      expect(content).toContain("## Dave_2026-02-10_2336_18");
+      expect(content).toContain("# Dave_2026-02-10_2336_18");
       expect(content).toContain(
         "*I want to add authentication to my app. Can you help?*",
       );
 
       // Assistant message — uses model name
-      expect(content).toContain("## claude-opus-4.6_2026-02-10_2336_25");
+      expect(content).toContain("# claude-opus-4.6_2026-02-10_2336_25");
 
       // Thinking block in details
       expect(content).toContain("<summary>Thinking</summary>");
@@ -65,7 +65,7 @@ describe("end-to-end export", () => {
       expect(content).toContain("No matches found.");
 
       // Second exchange
-      expect(content).toContain("## Dave_2026-02-10_2340_12");
+      expect(content).toContain("# Dave_2026-02-10_2340_12");
       expect(content).toContain(
         "*Sounds good, let's go with Passport.js. Can you set it up?*",
       );
@@ -124,7 +124,7 @@ updated: 1770799535662
       expect(delimiterCount).toBe(2);
 
       // Messages appended
-      expect(content).toContain("## User_2026-02-10_2336_18");
+      expect(content).toContain("# User_2026-02-10_2336_18");
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }

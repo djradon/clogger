@@ -47,6 +47,24 @@ describe("detectCommand", () => {
     });
   });
 
+  it("detects ::export command with filename", () => {
+    const result = detectCommand("::export my-session.md");
+    expect(result).toEqual({
+      name: "export",
+      args: "my-session.md",
+      rawMessage: "::export my-session.md",
+    });
+  });
+
+  it("detects ::capture command with filename", () => {
+    const result = detectCommand("::capture project-log.md");
+    expect(result).toEqual({
+      name: "capture",
+      args: "project-log.md",
+      rawMessage: "::capture project-log.md",
+    });
+  });
+
   it("returns null for non-command messages", () => {
     expect(detectCommand("hello world")).toBeNull();
     expect(detectCommand("let's discuss the :: syntax")).toBeNull();

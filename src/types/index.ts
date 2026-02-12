@@ -72,6 +72,8 @@ export interface AppState {
 /** In-chat commands recognized by the detector */
 export type InChatCommandName =
   | "record"
+  | "export"
+  | "capture"
   | "stop"
   | "pause"
   | "resume"

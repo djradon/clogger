@@ -85,11 +85,29 @@ function isUserTextEntry(entry: RawEntry): boolean {
   return entry.message!.content.some((b) => b.type === "text");
 }
 
+/** Strip ANSI escape codes (colors, formatting) from terminal output */
+function stripAnsi(text: string): string {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
+}
+
+/**
+ * Strip system-injected tags and ANSI codes from text content.
+ * Claude Code injects IDE context like <ide_opened_file>, <ide_selection>,
+ * and <system-reminder> blocks into user messages — these aren't user speech.
+ */
+function cleanText(text: string): string {
+  return stripAnsi(text)
+    .replace(/<(?:ide_opened_file|ide_selection|system-reminder)>[\s\S]*?<\/(?:ide_opened_file|ide_selection|system-reminder)>/g, "")
+    .trim();
+}
+
 /** Extract text blocks from a content array, joining with double newlines */
 function extractText(content: RawContentBlock[]): string {
   return content
     .filter((b) => b.type === "text")
-    .map((b) => String(b["text"] ?? ""))
+    .map((b) => cleanText(String(b["text"] ?? "")))
+    .filter((t) => t.length > 0)
     .join("\n\n");
 }
 
@@ -149,14 +167,14 @@ function truncate(str: string | undefined, max: number): string | undefined {
 
 /** Extract tool_result content as text */
 function extractToolResultText(content: unknown): string {
-  if (typeof content === "string") return content;
+  if (typeof content === "string") return stripAnsi(content);
   if (Array.isArray(content)) {
     return content
       .filter(
         (b: unknown) =>
           typeof b === "object" && b !== null && (b as RawContentBlock).type === "text",
       )
-      .map((b: unknown) => ((b as { text: string }).text))
+      .map((b: unknown) => stripAnsi((b as { text: string }).text))
       .join("\n");
   }
   return "";
@@ -187,10 +205,17 @@ function makeMessage(
   thinkingBlocks: ThinkingBlock[],
   model?: string,
 ): Message {
+  // Join text parts and collapse runs of 3+ newlines down to 2
+  const content = textParts
+    .filter((p) => p.length > 0)
+    .join("\n\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
   return {
     id: uuid,
     role,
-    content: textParts.join("\n\n"),
+    content,
     timestamp,
     ...(model && { model }),
     ...(toolCalls.length > 0 && { toolCalls }),
