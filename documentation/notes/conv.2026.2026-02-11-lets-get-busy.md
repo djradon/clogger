@@ -1289,3 +1289,279 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
 
 Want me to go ahead and create the commit?
+
+# User_2026-02-12_0706_49
+
+Let's try the status/info commands item. What were you envisioning?
+
+# claude-opus-4.6_2026-02-12_0706_51
+
+Let me check what's already there.
+
+
+# claude-opus-4.6_2026-02-12_0706_56
+
+Let me check what's already scaffolded for the `status` command.
+
+
+# claude-opus-4.6_2026-02-12_0707_08
+
+The `status` command is already implemented! It reads the persisted state and shows tracked sessions + active recordings. Here's what I was envisioning for making it more useful:
+
+**What it does now:**
+- Lists all tracked sessions (ID, file path, last processed timestamp)
+- Lists active recordings (ID, output file, start time, last export time)
+
+**What would make it better:**
+
+1. **Daemon status** — is the daemon actually running? Check the PID file and whether that process is alive
+2. **Session count summary** — "Watching 3 of 80 sessions (filtered by recency)" so you know the filter is working
+3. **Relative timestamps** — "Last export: 2 minutes ago" instead of raw ISO strings
+4. **Workspace labels** — show the decoded workspace root instead of the full JSONL path (e.g., `/home/djradon/hub/djradon/clogger` instead of `~/.claude/projects/-home-djradon-hub-djradon-clogger/abc123.jsonl`)
+
+Most of that is cosmetic though. The daemon-running check is the most valuable addition — right now `clogger status` just reads the state file, which tells you nothing about whether the daemon is actually alive.
+
+Want me to implement any or all of those, or did you have something different in mind?
+
+# User_2026-02-12_0709_48
+
+In retrospect, was Stricli a good choice for CLI framework?
+
+Yes, implement all your status improvements please.
+
+
+# claude-opus-4.6_2026-02-12_0710_00
+
+**On Stricli:** Yes, it's been a solid choice. The lazy-loading gives fast `--help`, the type-safe flags prevent silly bugs, and the `this: LocalContext` DI pattern keeps command implementations testable without heavyweight mocking. The main trade-off is smaller ecosystem/docs compared to commander, but for a focused CLI like this it hasn't been a limitation.
+
+Now let me implement the status improvements.
+
+
+
+# claude-opus-4.6_2026-02-12_0710_09
+
+Now let me check what `date-fns` functions are available — we already depend on `date-fns-tz`, so `date-fns` should be there too.
+
+
+# claude-opus-4.6_2026-02-12_0710_18
+
+Good, `formatDistanceToNow` is available. Now let me also check the discovery module to understand workspace root decoding — I want to reuse that logic.
+
+
+# claude-opus-4.6_2026-02-12_0710_21
+
+Good — I can extract the workspace root from the session file path using the same logic. Now let me rewrite `status.impl.ts`.
+
+
+
+
+
+
+# claude-opus-4.6_2026-02-12_0710_59
+
+All clean. Let me do a quick manual test to see the output.
+
+
+
+# claude-opus-4.6_2026-02-12_0711_21
+
+Done. The `clogger status` output now shows:
+
+- **Daemon status** — green `●` if running with PID, red `●` if not (detects stale PID files too)
+- **Summary line** — "1 tracked session, 1 active recording"
+- **Recordings first** — workspace label (`/home/djradon/hub/djradon/clogger`), output file path, relative timestamps ("Started about 6 hours ago · Last export less than a minute ago")
+- **Non-recording sessions** — listed separately with `○` indicator and last activity time
+
+The info logger line in the output is from the state manager loading — that'll only show in dev mode, not when running the built binary.
+
+# User_2026-02-12_0724_09
+
+You removed the "tracked session"? How come?
+
+
+# claude-opus-4.6_2026-02-12_0724_32
+
+It's still there — I just separated the display. Sessions with active recordings are shown under "Recordings" (with the workspace label and output file), and sessions *without* recordings are shown under "Tracked Sessions." Since your only tracked session also has a recording, it appears in the Recordings section instead of being listed twice.
+
+In the test output:
+```
+● Daemon running (PID 423541)
+  1 tracked session, 1 active recording
+
+Recordings:
+  ● /home/djradon/hub/djradon/clogger          ← this IS the tracked session
+    → .../conv.2026.2026-02-11-lets-get-busy.md
+    Started about 6 hours ago · Last export less than a minute ago
+```
+
+If you had a second session being watched that wasn't recording, it would appear under a separate "Tracked Sessions:" heading with an `○` indicator. Want me to change this — e.g., always show all sessions in one list with a recording indicator next to the ones that are recording?
+
+# User_2026-02-12_0735_01
+
+can you update the implementation plan? 
+
+Is ::capture really an alias? it's supposed to capture the pre-existing conversation and record future turns.
+
+# claude-opus-4.6_2026-02-12_0735_08
+
+Let me check the actual behavior in the code.
+
+
+# claude-opus-4.6_2026-02-12_0735_17
+
+You're right — `::capture` and `::record` do exactly the same thing in the code (both export full session + set recording state). They're true aliases. Your description of what `::capture` *should* mean — "capture the pre-existing conversation and record future turns" — is exactly what both commands already do. So the behavior is correct, they just don't need to be called aliases since "capture" better describes the full action (retroactive dump + ongoing recording).
+
+Let me update the implementation plan and the README.
+
+
+
+# claude-opus-4.6_2026-02-12_0735_24
+
+Now let me update the plan. I'll fix: the `::capture` description, mark Phase 2.5 items as done/updated, mark status as done, add the recency filter and local-time headings, and update test counts.
+
+
+
+
+# claude-opus-4.6_2026-02-12_0735_52
+
+Now update the in-chat commands table and design decision #12.
+
+
+
+# claude-opus-4.6_2026-02-12_0736_05
+
+Now update the config example to reflect current defaults.
+
+
+# claude-opus-4.6_2026-02-12_0736_10
+
+Now update the README to match — `::capture` is the primary command, `::record` is the synonym.
+
+
+
+# claude-opus-4.6_2026-02-12_0736_17
+
+Also update the Quick Start section to lead with `::capture`.
+
+
+
+
+# claude-opus-4.6_2026-02-12_0736_28
+
+And update the intro paragraph.
+
+
+
+# claude-opus-4.6_2026-02-12_0736_40
+
+Done. Here's what I updated:
+
+**Implementation plan:**
+- `::capture` is now the primary command: "export full pre-existing session + record future turns"
+- `::record` described as synonym (not the other way around)
+- Phase 2 items updated: added frontmatter preservation, empty turn filtering, recency filter, local timezone, status command improvements, 53 tests
+- Phase 3: marked "Status/info commands" as done
+- Config example updated with `maxSessionAge` and `pollInterval: 60000`
+- Design decisions: added #13 (recency filter), #14 (local timezone), reworded #12
+
+**README:**
+- Swapped `::capture`/`::record` ordering in the commands table and all examples
+- `::capture` is now the primary recommended command throughout
+
+# User_2026-02-12_0736_48
+
+record should not capture the pre-existing stuff, just record from the current position onward.
+
+
+# claude-opus-4.6_2026-02-12_0736_55
+
+Good distinction. So the semantics are:
+- `::capture` — dump the full session from the start + record future turns
+- `::record` — start recording from this point forward only
+
+Let me update the monitor.
+
+
+
+# claude-opus-4.6_2026-02-12_0737_05
+
+Now update the tests — the `::record` test should no longer expect output file content, and I should add a test confirming `::record` doesn't export the pre-existing session.
+
+
+
+# claude-opus-4.6_2026-02-12_0737_18
+
+Now update the `::capture` test description to be clear about the distinction.
+
+
+
+# claude-opus-4.6_2026-02-12_0738_57
+
+Let me run the tests to see which one is currently failing.
+
+
+
+# claude-opus-4.6_2026-02-12_0740_04
+
+The failing test is `::record sets recording state without exporting pre-existing messages` at line 112. The issue: `processSession` collects all messages (fixture + `::record` command), then the incremental export at the end writes all of them to disk because the recording is now active. `::record` is forward-only, so pre-existing messages shouldn't be exported.
+
+This also reveals a latent bug with `::capture` — `exportFullSession` writes the full session, then the incremental export at the end of `processSession` re-exports the same batch, duplicating content.
+
+Let me fix the `processSession` logic.
+
+
+# claude-opus-4.6_2026-02-12_0740_09
+
+Now I'll fix `processSession` to handle both cases correctly:
+- `::capture` / `::export`: full export already done in `handleCommand`, skip incremental
+- `::record`: forward-only, only export messages after the command
+
+
+# claude-opus-4.6_2026-02-12_0740_25
+
+Now let me run the tests to verify the fix.
+
+
+# claude-opus-4.6_2026-02-12_0740_32
+
+The monitor tests all pass now. The failure moved to the e2e-daemon test which uses `::record` and expects pre-existing messages in the output. Let me read that test.
+
+
+# claude-opus-4.6_2026-02-12_0740_47
+
+The e2e test uses `::record` but expects pre-existing messages in the output — that's `::capture` semantics. I'll update it to use `::capture`.
+
+
+# claude-opus-4.6_2026-02-12_0741_03
+
+I also need to fix the `makeConfig` in this test to include the `maxSessionAge` field:
+
+
+
+# claude-opus-4.6_2026-02-12_0741_15
+
+All 53 tests pass, 7 test files green. Let me also verify the build is clean.
+
+# claude-opus-4.6_2026-02-12_0741_26
+
+All clean — 53 tests passing, typecheck and build green.
+
+Here's what I fixed:
+
+1. **`::record` forward-only semantics** in [monitor.ts:135-145](src/core/monitor.ts#L135-L145): Added tracking for commands encountered during a batch. When `::record` is detected, only messages *after* the command are exported incrementally. When `::capture`/`::export` fire, the incremental export is skipped entirely (they already do their own full export via `exportFullSession`).
+
+2. **Fixed latent `::capture` double-write bug**: Previously, `::capture` would call `exportFullSession` AND then the incremental export would re-write the same batch. The `skipIncrementalExport` flag prevents this duplication.
+
+3. **Updated e2e-daemon test** to use `::capture` instead of `::record`, matching its intent of testing retroactive export + incremental append + stop.
+
+4. **Added missing `maxSessionAge`** to the e2e-daemon test config.
+
+# User_2026-02-12_0744_41
+
+There are still, 2, 3, or even 4 spaces between some claude turns.
+
+Also, we could reduce a lot of unnecessary headings by aggregating all subsequent turns from Claude under a single heading. i.e., we only add a new heading when the conversation actually turns to the other participant.
+
+# claude-opus-4.6_2026-02-12_0744_44
+
+Let me look at the exported file and the exporter code.

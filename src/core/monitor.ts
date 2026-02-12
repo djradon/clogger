@@ -135,6 +135,10 @@ export class SessionMonitor {
     const newMessages: Message[] = [];
     let latestOffset = fromOffset;
 
+    // Track commands that affect incremental export behavior
+    let skipIncrementalExport = false;
+    let recordStartIndex = -1;
+
     try {
       for await (const { message, offset } of provider.parseMessages(
         filePath,
@@ -147,6 +151,14 @@ export class SessionMonitor {
         if (message.role === "user") {
           const command = detectCommand(message.content);
           if (command) {
+            // ::capture and ::export do their own full export — skip incremental
+            if (command.name === "capture" || command.name === "export") {
+              skipIncrementalExport = true;
+            }
+            // ::record is forward-only — only export messages after this point
+            if (command.name === "record") {
+              recordStartIndex = newMessages.length;
+            }
             await this.handleCommand(command.name, command.args, sessionId, provider, filePath);
           }
         }
@@ -167,17 +179,22 @@ export class SessionMonitor {
 
     // If we're recording this session, export the new messages
     const recording = this.state.getRecording(sessionId);
-    if (recording) {
-      try {
-        await exportToMarkdown(newMessages, recording.outputFile, {
-          metadata: this.config.metadata,
-        });
-        this.state.setRecording(sessionId, {
-          ...recording,
-          lastExported: new Date().toISOString(),
-        });
-      } catch (error) {
-        logger.error("Error exporting messages", { sessionId, error });
+    if (recording && !skipIncrementalExport) {
+      const messagesToExport =
+        recordStartIndex >= 0 ? newMessages.slice(recordStartIndex) : newMessages;
+
+      if (messagesToExport.length > 0) {
+        try {
+          await exportToMarkdown(messagesToExport, recording.outputFile, {
+            metadata: this.config.metadata,
+          });
+          this.state.setRecording(sessionId, {
+            ...recording,
+            lastExported: new Date().toISOString(),
+          });
+        } catch (error) {
+          logger.error("Error exporting messages", { sessionId, error });
+        }
       }
     }
   }
@@ -208,12 +225,23 @@ export class SessionMonitor {
     filePath: string,
   ): Promise<void> {
     switch (name) {
-      case "record":
       case "capture": {
         const outputFile = this.resolveOutputPath(args, provider, filePath);
-        logger.info("Starting recording", { sessionId, outputFile, command: name });
+        logger.info("Capturing session", { sessionId, outputFile });
 
         await this.exportFullSession(provider, filePath, outputFile);
+
+        this.state.setRecording(sessionId, {
+          outputFile,
+          started: new Date().toISOString(),
+          lastExported: new Date().toISOString(),
+        });
+        break;
+      }
+
+      case "record": {
+        const outputFile = this.resolveOutputPath(args, provider, filePath);
+        logger.info("Starting recording", { sessionId, outputFile });
 
         this.state.setRecording(sessionId, {
           outputFile,

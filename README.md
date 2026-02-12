@@ -2,7 +2,7 @@
 
 Chat logger — monitor and export LLM conversation logs to markdown.
 
-Clogger runs as a background daemon that watches your Claude Code session files. When you type `::record my-notes.md` in a conversation, it exports the full session to markdown and continues appending new messages as you chat. Works great with any markdown-based note system.
+Clogger runs as a background daemon that watches your Claude Code session files. When you type `::capture my-notes.md` in a conversation, it exports the full session to markdown and continues appending new messages as you chat. Works great with any markdown-based note system.
 
 ## Install
 
@@ -22,7 +22,7 @@ pnpm link --global
 clogger start
 
 # In any Claude Code conversation, type:
-#   ::record my-conversation.md       → export full session + keep recording
+#   ::capture my-conversation.md      → export full session + keep recording
 #   ::stop                            → stop recording
 
 # Stop the daemon
@@ -54,8 +54,8 @@ Type these directly in a Claude Code conversation while the daemon is running:
 
 | Command | Description |
 |---------|-------------|
-| `::record <file>` | Export full session + start continuous recording |
-| `::capture <file>` | Same as `::record` (alias) |
+| `::capture <file>` | Export full pre-existing session + record future turns |
+| `::record <file>` | Synonym for `::capture` |
 | `::export <file>` | One-shot full session export (no continuous recording) |
 | `::stop` | Stop the current recording |
 
@@ -63,7 +63,7 @@ File paths can be absolute, relative to workspace root, or use `@` prefix (VSCod
 
 **Note:** These commands are detected by parsing the conversation log — Claude will see them and respond as part of the conversation. You can embed them naturally, e.g.:
 
-> I'm going to ::record this conversation to @documentation/notes/conv.design-review.md
+> I'm going to ::capture this conversation to @documentation/notes/conv.design-review.md
 
 The daemon picks up the `::record` regardless of surrounding text.
 

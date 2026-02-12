@@ -70,7 +70,7 @@ afterEach(async () => {
 // ---------------------------------------------------------------------------
 
 describe("SessionMonitor command handling", () => {
-  it("::record triggers full session export and sets recording state", async () => {
+  it("::record sets recording state without exporting pre-existing messages", async () => {
     const stateDir = path.join(tmpDir, "state");
     const outputFile = path.join(tmpDir, "record-output.md");
     const state = new StateManager(stateDir);
@@ -108,10 +108,8 @@ describe("SessionMonitor command handling", () => {
     expect(recording).toBeDefined();
     expect(recording!.outputFile).toBe(outputFile);
 
-    // Output file should exist with content
-    const content = await fs.readFile(outputFile, "utf-8");
-    expect(content).toMatch(/^---\n/); // has frontmatter
-    expect(content).toContain("# "); // has message headings
+    // Output file should NOT exist yet (no retroactive export)
+    await expect(fs.access(outputFile)).rejects.toThrow();
   });
 
   it("::export triggers full session export without recording state", async () => {
@@ -152,7 +150,7 @@ describe("SessionMonitor command handling", () => {
     expect(content).toMatch(/^---\n/);
   });
 
-  it("::capture triggers full session export and sets recording state", async () => {
+  it("::capture exports full pre-existing session and sets recording state", async () => {
     const stateDir = path.join(tmpDir, "state");
     const outputFile = path.join(tmpDir, "capture-output.md");
     const state = new StateManager(stateDir);
