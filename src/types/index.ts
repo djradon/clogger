@@ -74,10 +74,7 @@ export type InChatCommandName =
   | "record"
   | "export"
   | "capture"
-  | "stop"
-  | "pause"
-  | "resume"
-  | "status";
+  | "stop";
 
 export interface InChatCommand {
   name: InChatCommandName;

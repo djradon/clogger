@@ -121,6 +121,9 @@ export class SessionMonitor {
     });
 
     this.watchers.set(filePath, watcher);
+
+    // Catch up on any changes that accumulated while this session wasn't watched
+    void this.processSession(provider, filePath, sessionId);
   }
 
   /** Process new messages in a session file */

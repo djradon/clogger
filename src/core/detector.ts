@@ -7,9 +7,6 @@ const VALID_COMMANDS = new Set<InChatCommandName>([
   "export",
   "capture",
   "stop",
-  "pause",
-  "resume",
-  "status",
 ]);
 
 /** Detect an in-chat command from a user message */

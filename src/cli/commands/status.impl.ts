@@ -5,6 +5,8 @@ import { expandHome } from "../../utils/paths.js";
 import { formatDistanceToNow } from "date-fns";
 import chalk from "chalk";
 import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
 
 interface StatusFlags {}
 
@@ -27,13 +29,60 @@ async function isDaemonRunning(pidFile: string): Promise<{ running: boolean; pid
   }
 }
 
-/** Extract a workspace label from a session file path */
-function workspaceLabel(filePath: string): string {
+async function collectValidPaths(
+  prefix: string,
+  remaining: string,
+  results: string[],
+): Promise<void> {
+  if (!remaining) {
+    results.push(prefix);
+    return;
+  }
+  const hyphens: number[] = [];
+  for (let i = 0; i < remaining.length; i++) {
+    if (remaining[i] === "-") hyphens.push(i);
+  }
+  for (const pos of hyphens) {
+    if (pos === 0) continue;
+    const segment = remaining.slice(0, pos);
+    const rest = remaining.slice(pos + 1);
+    const candidate = path.join(prefix, segment);
+    try {
+      const stat = await fs.stat(candidate);
+      if (stat.isDirectory()) {
+        await collectValidPaths(candidate, rest, results);
+      }
+    } catch { /* not a valid path */ }
+  }
+  const leaf = path.join(prefix, remaining);
+  try {
+    await fs.stat(leaf);
+    results.push(leaf);
+  } catch { /* not a valid path */ }
+}
+
+async function resolveEncodedPath(encoded: string): Promise<string> {
+  const raw = encoded.startsWith("-") ? encoded.slice(1) : encoded;
+  const home = os.homedir();
+  const homeEncoded = home.slice(1).replace(/\//g, "-");
+  if (raw.startsWith(homeEncoded + "-")) {
+    const afterHome = raw.slice(homeEncoded.length + 1);
+    const results: string[] = [];
+    await collectValidPaths(home, afterHome, results);
+    if (results.length > 0) {
+      results.sort((a, b) => a.split("/").length - b.split("/").length);
+      return results[0]!;
+    }
+  }
+  return encoded;
+}
+
+async function workspaceLabel(filePath: string): Promise<string> {
   const parts = filePath.split("/");
   const projectsIdx = parts.indexOf("projects");
   if (projectsIdx >= 0 && projectsIdx + 1 < parts.length) {
     const encoded = parts[projectsIdx + 1]!;
-    return encoded.replace(/-/g, "/");
+    return resolveEncodedPath(encoded);
   }
   return filePath;
 }
@@ -89,7 +138,7 @@ export async function statusImpl(
     this.process.stdout.write(chalk.bold("\nRecordings:\n"));
     for (const [id, recording] of recordingEntries) {
       const session = sessions[id];
-      const workspace = session ? workspaceLabel(session.filePath) : "unknown";
+      const workspace = session ? await workspaceLabel(session.filePath) : "unknown";
       this.process.stdout.write(
         `  ${chalk.green("●")} ${chalk.cyan(workspace)}\n`,
       );
@@ -109,7 +158,7 @@ export async function statusImpl(
   if (nonRecordingSessions.length > 0) {
     this.process.stdout.write(chalk.bold("\nTracked Sessions:\n"));
     for (const [, session] of nonRecordingSessions) {
-      const workspace = workspaceLabel(session.filePath);
+      const workspace = await workspaceLabel(session.filePath);
       this.process.stdout.write(
         `  ${chalk.dim("○")} ${chalk.cyan(workspace)}\n`,
       );

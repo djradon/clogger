@@ -80,4 +80,16 @@ export class StateManager {
   ): AppState["recordings"][string] | undefined {
     return this.state.recordings[sessionId];
   }
+
+  removeSession(sessionId: string): void {
+    delete this.state.sessions[sessionId];
+    delete this.state.recordings[sessionId];
+    this.dirty = true;
+  }
+
+  /** Remove all sessions and recordings from state */
+  clearAll(): void {
+    this.state = structuredClone(DEFAULT_STATE);
+    this.dirty = true;
+  }
 }

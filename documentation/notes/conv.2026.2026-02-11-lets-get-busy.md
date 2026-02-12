@@ -1636,3 +1636,80 @@ Zero runs of excessive blank lines. Let me also check a representative section a
 
 I notice there are still two consecutive Claude headings at lines 834-836. Let me investigate:
 
+
+# claude-opus-4.6_2026-02-11_2351_21
+
+Those lines at 834 and 836 are actually part of the **user's message content** — the user was quoting headings from the original file as examples of "weird empty turns." They're not real turn boundaries. The actual heading structure is:
+
+- Line 822: `# User_2026-02-11_1718_09` (user turn)
+- Line 838: `# claude-opus-4.6_2026-02-11_1718_12` (Claude's response — single heading covering what was previously 10+ separate headings)
+
+The aggregation is working. Let me do a final check to confirm the overall structure looks right:
+
+Clean alternation — User, Claude, User, Claude. No consecutive same-role headings in the actual turn structure. The previously 181 headings are now properly alternating at 95 (many of those being content within user messages that happen to start with `# `).
+
+Clean output — exactly one blank line between sections, proper alternation, no excessive whitespace.
+
+Both issues fixed. Here's the summary:
+
+**Extra blank lines**: Added `.replace(/\n{3,}/g, "\n\n").trimEnd()` at the end of `formatMessage` — collapses any run of 3+ newlines to exactly 2, and trims trailing whitespace. Zero excessive blank line runs in the output.
+
+**Same-role turn aggregation**: `renderToString` now tracks `lastRole`. A heading is only emitted when the speaker actually changes. Consecutive Claude turns (which are common when Claude makes multiple tool calls, reads files, etc. without user interaction) are merged under a single heading.
+
+Result: 181 headings → 95 (48% reduction), with clean User/Claude alternation throughout. The remaining count includes headings that appear inside user message content (like quoted examples).
+
+# User_2026-02-12_0015_22
+
+I'm trying to record another conversation, and it's listed as tracked, but it's active and listed last activity 16 minutes ago. (so should it drop out of tracked?) And it's just not starting recording, 
+
+Tracked Sessions:
+  ○ /home/djradon/hub/semantic/flow/sflo
+    Last activity 15 minutes ago
+
+# claude-opus-4.6_2026-02-12_0016_15
+
+I see the issue. When a session drops out of watching (exceeds `maxSessionAge`) and then becomes active again (you type `::capture`), the daemon rediscovers it on the next rescan and creates a new watcher — but it only listens for **future** changes. It doesn't process the changes that happened while the session was unwatched, so the `::capture` command sitting in the file never gets picked up.
+
+The fix: trigger `processSession` when a new watcher is created, so it catches up on any unprocessed messages.
+
+
+
+
+# claude-opus-4.6_2026-02-12_0016_35
+
+All 53 tests pass. The fix: when `watchSession` creates a new watcher, it now immediately calls `processSession` to catch up on any unprocessed messages since the last saved offset. This handles:
+
+- **Your scenario**: session was pruned (idle > 10 min), user types `::capture`, daemon rediscovers on next rescan → catches up immediately
+- **Daemon restart**: picks up any commands that were issued while the daemon was down
+- **Normal operation**: the `change` event handler still processes future incremental updates
+
+You'll need to restart the daemon (`pnpm dev start` or rebuild + restart) to pick up this fix. After restart, the sflo session should be processed within 60 seconds (next rescan).
+
+# User_2026-02-12_0855_10
+
+I issued a stop command and then another capture command, and the capture didn't start. Also the tracked session is reporting as "/home/djradon/hub/semantic/flow/sflo" but it should be "/home/djradon/hub/semantic-flow/sflo"
+
+# claude-opus-4.6_2026-02-12_0855_15
+
+Two issues to investigate:
+
+1. **Capture not starting after stop** — likely the same `watchSession` issue, or a command processing bug
+2. **Wrong workspace label** — the path decoding in `status.impl.ts` is incorrect
+
+Let me look at both.
+
+
+
+
+# claude-opus-4.6_2026-02-12_0857_14
+
+**Issue 1 (capture not starting):** The fix is already in place from the previous change — `watchSession` now calls `processSession` immediately. But you need to **restart the daemon** for it to take effect, since the running instance is still using the old code.
+
+**Issue 2 (wrong workspace label):** The `workspaceLabel` function naively replaces ALL hyphens with `/`, but directory names like `semantic-flow` contain literal hyphens. The path `-home-djradon-hub-semantic-flow-sflo` gets decoded as `/home/djradon/hub/semantic/flow/sflo` instead of `/home/djradon/hub/semantic-flow/sflo`.
+
+The fix: walk the filesystem to disambiguate which hyphens are path separators vs literal hyphens.
+
+
+# claude-opus-4.6_2026-02-12_0910_21
+
+Now update the callers to `await` the async `workspaceLabel`:

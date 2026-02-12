@@ -29,12 +29,12 @@ describe("detectCommand", () => {
     });
   });
 
-  it("detects ::status command", () => {
-    const result = detectCommand("::status");
+  it("detects ::capture command with args", () => {
+    const result = detectCommand("::capture ~/notes/conv.md");
     expect(result).toEqual({
-      name: "status",
-      args: "",
-      rawMessage: "::status",
+      name: "capture",
+      args: "~/notes/conv.md",
+      rawMessage: "::capture ~/notes/conv.md",
     });
   });
 
