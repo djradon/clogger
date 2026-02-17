@@ -80,4 +80,19 @@ describe("detectCommand", () => {
     const result = detectCommand("::record test.md\nsome other text\n::stop");
     expect(result?.name).toBe("record");
   });
+
+  it("detects commands that don't start at beginning of line", () => {
+    const result = detectCommand("We will ::record @path/to/file.md");
+    expect(result).toEqual({
+      name: "record",
+      args: "@path/to/file.md",
+      rawMessage: "We will ::record @path/to/file.md",
+    });
+  });
+
+  it("extracts path from natural language with @-mention", () => {
+    const result = detectCommand("Let's ::record this into @notes/conv.md for later");
+    expect(result?.name).toBe("record");
+    expect(result?.args).toContain("@notes/conv.md");
+  });
 });

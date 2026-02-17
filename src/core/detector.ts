@@ -1,6 +1,6 @@
 import type { InChatCommand, InChatCommandName } from "../types/index.js";
 
-const COMMAND_PATTERN = /^::(\w+)\s*(.*)$/i;
+const COMMAND_PATTERN = /::(\w+)\s*(.*)$/i;
 
 const VALID_COMMANDS = new Set<InChatCommandName>([
   "record",
@@ -8,6 +8,23 @@ const VALID_COMMANDS = new Set<InChatCommandName>([
   "capture",
   "stop",
 ]);
+
+/** Extract a file path from args that may contain natural language */
+function extractPath(rawArgs: string): string {
+  const trimmed = rawArgs.trim();
+  if (!trimmed) return "";
+
+  // Look for @-mention paths (e.g., "@notes/file.md")
+  const mentionMatch = /@[\w\-./~]+\.md/i.exec(trimmed);
+  if (mentionMatch) return mentionMatch[0]!;
+
+  // Look for file paths with .md extension
+  const pathMatch = /[\w\-./~]+\.md/i.exec(trimmed);
+  if (pathMatch) return pathMatch[0]!;
+
+  // Return the whole thing if no path pattern found (backward compatible)
+  return trimmed;
+}
 
 /** Detect an in-chat command from a user message */
 export function detectCommand(messageText: string): InChatCommand | null {
@@ -21,9 +38,12 @@ export function detectCommand(messageText: string): InChatCommand | null {
   const name = match[1]!.toLowerCase();
   if (!isValidCommand(name)) return null;
 
+  const rawArgs = match[2]?.trim() ?? "";
+  const args = extractPath(rawArgs);
+
   return {
     name: name as InChatCommandName,
-    args: match[2]?.trim() ?? "",
+    args,
     rawMessage: messageText,
   };
 }

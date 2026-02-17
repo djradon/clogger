@@ -3,6 +3,7 @@ import { startCommand } from "./commands/start.js";
 import { stopCommand } from "./commands/stop.js";
 import { statusCommand } from "./commands/status.js";
 import { exportCommand } from "./commands/export.js";
+import { cleanCommand } from "./commands/clean.js";
 
 const routes = buildRouteMap({
   routes: {
@@ -10,6 +11,7 @@ const routes = buildRouteMap({
     stop: stopCommand,
     status: statusCommand,
     export: exportCommand,
+    clean: cleanCommand,
   },
   docs: {
     brief: "Chat logger — monitor and export LLM conversation logs to markdown",
