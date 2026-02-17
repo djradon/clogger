@@ -354,3 +354,94 @@ Perfect! Much clearer formatting. Now let's run tests and commit:
 
 
 
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_1418_09
+
+Perfect! Committed successfully.
+
+## Answering Your Question: Should Session State Persist?
+
+**"Tracked sessions" = sessions we've processed messages from, with stored offsets**
+
+They **should persist across restarts** because:
+
+1. **Prevent re-processing**: Without persisted offsets, every daemon restart would re-read all messages from the beginning
+2. **Prevent duplicate commands**: Would re-trigger `::record`, `::capture`, etc. commands that were already handled
+3. **Resume recordings correctly**: Active recordings need to know where they left off
+
+**"Watching" is separate:**
+- Sessions are only **actively watched** if modified within `maxSessionAge` (default 10 min)
+- Stale file watchers are auto-pruned every poll interval
+- But the offset state persists so we can resume later if the session becomes active again
+
+**Example flow:**
+1. You have a recording active for `/path/to/notes.md`
+2. Daemon restarts
+3. Session state says "last processed at offset 50000"
+4. Session was modified 5 min ago → gets watched again
+5. New messages arrive → exported starting from offset 50000, not 0
+
+**If we cleared state on restart:**
+- Re-export entire conversation from beginning
+- Re-trigger all `::record` commands
+- Duplicate exports
+
+The `clean` command gives you manual control to remove old sessions when you want. Does this make sense?
+
+# User_2026-02-17_1425_17
+
+Makes sense. 
+
+What are these parentheticals (hashed-gathering-allen)? I was hoping for the summary line that the app uses, i.e., a bit of the user's first prompt. We should probably also include the GUID for ease of filesystem comparison and manual export commands. And for "tracked sessions" maybe we include the "last processed line number"?
+
+# claude-sonnet-4-5.20250929_2026-02-17_1425_29
+
+Good point! The slug ("hashed-gathering-allen") is just a random name. Let me extract the actual conversation content and show:
+
+1. **First user message snippet** (like "Clogger seems to be broken...")
+2. **GUID** for filesystem/export commands
+3. **Last processed offset** for tracked sessions
+
+
+
+
+
+
+
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_1426_19
+
+Now let me update the clean command to match:
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_1426_39
+
+Now let's test the new format:
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_1426_59
+
+Good progress! But I see system tags like `<ide_opened_file>` showing up. Let me filter those out and find the actual user message:
+
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_1427_15
+
+Perfect! Now showing:
+- **Actual first user message**: "Let's get busy -- set up all the project scaffolding..."
+- **Short GUID**: (c4832d16)
+- **Offset for tracked sessions**: Offset 686576
+
+
+
+
+

@@ -29,38 +29,71 @@ async function isDaemonRunning(pidFile: string): Promise<{ running: boolean; pid
   }
 }
 
-/** Extract session slug from JSONL file (search first 10 lines) */
-async function getSessionSlug(jsonlPath: string): Promise<string | null> {
+interface SessionMetadata {
+  sessionId: string;
+  firstUserMessage: string | null;
+}
+
+/** Extract session metadata from JSONL file */
+async function getSessionMetadata(jsonlPath: string): Promise<SessionMetadata | null> {
   try {
     const content = await fs.readFile(jsonlPath, "utf-8");
-    const lines = content.split("\n").slice(0, 10);
+    const lines = content.split("\n").slice(0, 20);
+
+    let sessionId = "";
+    let firstUserMessage: string | null = null;
 
     for (const line of lines) {
       if (!line.trim()) continue;
       try {
         const parsed = JSON.parse(line);
-        if (parsed.slug) return parsed.slug;
+
+        // Get session ID from any line
+        if (!sessionId && parsed.sessionId) {
+          sessionId = parsed.sessionId;
+        }
+
+        // Get first user message text (skip system tags)
+        if (!firstUserMessage && parsed.type === "user" && parsed.message?.content) {
+          for (const block of parsed.message.content) {
+            if (block.type === "text" && block.text) {
+              // Skip system reminders and tags
+              const cleaned = block.text
+                .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
+                .replace(/<ide_[^>]+>[\s\S]*?<\/ide_[^>]+>/g, "")
+                .trim();
+
+              if (cleaned) {
+                // Take first ~60 chars, strip newlines
+                firstUserMessage = cleaned.replace(/\n/g, " ").slice(0, 60);
+                break;
+              }
+            }
+          }
+        }
+
+        if (sessionId && firstUserMessage) break;
       } catch {
         continue;
       }
     }
-    return null;
+
+    return sessionId ? { sessionId, firstUserMessage } : null;
   } catch {
     return null;
   }
 }
 
-/** Format a session label as "provider: encoded-path (slug)" */
+/** Format a session label as "claude: "first message..." (session-id-short)" */
 async function formatSessionLabel(filePath: string): Promise<string> {
-  const parts = filePath.split("/");
-  const projectsIdx = parts.indexOf("projects");
+  const metadata = await getSessionMetadata(filePath);
 
-  if (projectsIdx >= 0 && projectsIdx + 1 < parts.length) {
-    const encodedPath = parts[projectsIdx + 1]!;
-    const slug = await getSessionSlug(filePath);
-
-    const label = `claude: ${encodedPath}`;
-    return slug ? `${label} (${slug})` : label;
+  if (metadata) {
+    const shortId = metadata.sessionId.slice(0, 8);
+    const message = metadata.firstUserMessage
+      ? `"${metadata.firstUserMessage}..."`
+      : `(no message)`;
+    return `claude: ${message} (${shortId})`;
   }
 
   return filePath;
@@ -142,7 +175,7 @@ export async function statusImpl(
         `  ${chalk.dim("○")} ${chalk.cyan(workspace)}\n`,
       );
       this.process.stdout.write(
-        `    ${chalk.dim(`Last activity ${timeAgo(session.lastProcessedTimestamp)}`)}\n`,
+        `    ${chalk.dim(`Last activity ${timeAgo(session.lastProcessedTimestamp)} · Offset ${session.lastProcessedOffset}`)}\n`,
       );
     }
   }
