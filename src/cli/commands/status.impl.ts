@@ -84,16 +84,24 @@ async function getSessionMetadata(jsonlPath: string): Promise<SessionMetadata | 
   }
 }
 
-/** Format a session label as "claude: "first message..." (session-id-short)" */
+/** Format a session label as "claude: folder-name/"first message..." (session-id-short)" */
 async function formatSessionLabel(filePath: string): Promise<string> {
   const metadata = await getSessionMetadata(filePath);
+
+  // Extract encoded folder name from path
+  const parts = filePath.split("/");
+  const projectsIdx = parts.indexOf("projects");
+  const folderName = (projectsIdx >= 0 && projectsIdx + 1 < parts.length)
+    ? parts[projectsIdx + 1]!
+    : null;
 
   if (metadata) {
     const shortId = metadata.sessionId.slice(0, 8);
     const message = metadata.firstUserMessage
       ? `"${metadata.firstUserMessage}..."`
       : `(no message)`;
-    return `claude: ${message} (${shortId})`;
+    const folder = folderName ? `${folderName}/` : "";
+    return `claude: ${folder}${message} (${shortId})`;
   }
 
   return filePath;

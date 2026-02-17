@@ -445,3 +445,65 @@ Perfect! Now showing:
 
 
 
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_1428_12
+
+## Summary
+
+✅ **All improvements complete and committed!**
+
+### What We Fixed:
+
+1. **Command Detection** (commit f635261)
+   - Detects `::command` anywhere in first line (not just at start)
+   - Extracts paths from natural language: "We will ::record @file.md"
+   - Added comprehensive tests
+
+2. **Clean Command** (commit f635261)
+   - `clogger clean --recordings <days>` - Remove old recordings
+   - `clogger clean --sessions <days>` - Remove old tracked sessions
+   - `clogger clean --all` - Remove everything
+   - `--dryRun` to preview changes
+
+3. **Display Enhancements** (commit dac0618)
+   - Shows first **actual user message** (60 chars)
+   - Filters out system tags (`<system-reminder>`, `<ide_*>`)
+   - Shows **short GUID** (first 8 chars) for filesystem/export commands
+   - Tracked sessions show **offset** for debugging
+
+### Current Output:
+```
+Recordings:
+  ● claude: "Let's get busy -- set up all..." (c4832d16)
+    → /home/djradon/.../conv.2026.2026-02-11-lets-get-busy.md
+    Started 6 days ago · Last export 3 days ago
+
+Tracked Sessions:
+  ○ claude: "I want to move a conversation..." (d00f3c06)
+    Last activity 3 days ago · Offset 686576
+```
+
+All 55 tests passing. Recording this conversation successfully! 🎉
+
+# User_2026-02-17_1429_36
+
+I still want to to include the folder name, like "-home-djradon-hub-djradon-clogger" I think, claude: <folder-name>/<conversation-first-line> is good.
+
+# claude-sonnet-4-5.20250929_2026-02-17_1429_42
+
+Good point! Let me update the format to include the folder name:
+
+
+
+
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_1430_14
+
+Perfect! Now showing:
+- `claude: -home-djradon-hub-djradon-clogger/"We will ::record this..." (af0f39da)`
+- `claude: -home-djradon-hub-semantic-flow-sflo/"I want to move a conversation..." (d00f3c06)`
+
