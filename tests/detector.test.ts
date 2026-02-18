@@ -76,7 +76,7 @@ describe("detectCommand", () => {
     expect(detectCommand("::summarize output.md")).toBeNull();
   });
 
-  it("only looks at the first line", () => {
+  it("detects command on first line when multiple commands present", () => {
     const result = detectCommand("::record test.md\nsome other text\n::stop");
     expect(result?.name).toBe("record");
   });
@@ -94,5 +94,40 @@ describe("detectCommand", () => {
     const result = detectCommand("Let's ::record this into @notes/conv.md for later");
     expect(result?.name).toBe("record");
     expect(result?.args).toContain("@notes/conv.md");
+  });
+
+  it("extracts full path from <ide_opened_file> tag when present", () => {
+    const message = `::capture @sflo/documentation/file.md
+
+<ide_opened_file>The user opened the file /home/djradon/hub/semantic-flow/sflo/documentation/file.md in the IDE.</ide_opened_file>`;
+
+    const result = detectCommand(message);
+    expect(result).toEqual({
+      name: "capture",
+      args: "/home/djradon/hub/semantic-flow/sflo/documentation/file.md",
+      rawMessage: message,
+    });
+  });
+
+  it("falls back to visible path when <ide_opened_file> contains non-markdown file", () => {
+    const message = `::record @notes/conv.md
+
+<ide_opened_file>The user opened the file /home/user/project/README.txt in the IDE.</ide_opened_file>`;
+
+    const result = detectCommand(message);
+    expect(result?.name).toBe("record");
+    expect(result?.args).toBe("@notes/conv.md");
+  });
+
+  it("detects command on any line, not just first", () => {
+    const message = `Some text before the command
+
+::capture @notes/session.md
+
+More text after`;
+
+    const result = detectCommand(message);
+    expect(result?.name).toBe("capture");
+    expect(result?.args).toContain("@notes/session.md");
   });
 });

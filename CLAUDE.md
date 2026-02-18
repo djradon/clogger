@@ -37,6 +37,12 @@ Clean options:
 
 All recording paths are resolved as follows:
 - Absolute paths (starting with `/` or `~`) are used as-is
-- Relative paths are resolved against the current working directory
+- Relative paths are resolved against the **workspace root** (detected via git or common patterns), falling back to current working directory if workspace cannot be determined
 - `@` prefix is stripped (VSCode @-mention compatibility)
 - `.md` extension is added if missing
+
+**Workspace Detection**: For relative paths, clogger attempts to find your project workspace by:
+1. Extracting the project name from the session folder
+2. Searching common locations (`~/hub/<project>`, `~/hub/*/<project>`, `~/<project>`)
+3. Verifying with `.git` directory if present
+4. Falling back to current directory if workspace cannot be determined
