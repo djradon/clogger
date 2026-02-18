@@ -130,4 +130,31 @@ More text after`;
     expect(result?.name).toBe("capture");
     expect(result?.args).toContain("@notes/session.md");
   });
+
+  it("matches @-mentioned path with correct <ide_opened_file> tag when multiple tags present", () => {
+    const message = `<ide_opened_file>The user opened the file /home/user/project/other-file.md in the IDE.</ide_opened_file>
+
+::record @sflo/documentation/conv.md
+
+<ide_opened_file>The user opened the file /home/djradon/hub/semantic-flow/sflo/documentation/conv.md in the IDE.</ide_opened_file>
+
+<ide_opened_file>The user opened the file /home/user/notes/unrelated.md in the IDE.</ide_opened_file>`;
+
+    const result = detectCommand(message);
+    expect(result).toEqual({
+      name: "record",
+      args: "/home/djradon/hub/semantic-flow/sflo/documentation/conv.md",
+      rawMessage: message,
+    });
+  });
+
+  it("returns visible path when no <ide_opened_file> tag matches the @-mention", () => {
+    const message = `<ide_opened_file>The user opened the file /home/user/other/file.md in the IDE.</ide_opened_file>
+
+::capture @notes/session.md`;
+
+    const result = detectCommand(message);
+    expect(result?.name).toBe("capture");
+    expect(result?.args).toBe("@notes/session.md");
+  });
 });

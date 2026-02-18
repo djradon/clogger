@@ -14,24 +14,39 @@ function extractPath(rawArgs: string, fullMessage: string): string {
   const trimmed = rawArgs.trim();
   if (!trimmed) return "";
 
-  // First, check if there's an <ide_opened_file> tag with the full path
-  // VSCode @-mentions include this tag with the absolute path
-  const ideFileMatch = /<ide_opened_file>The user opened the file ([^<]+) in the IDE\.<\/ide_opened_file>/i.exec(fullMessage);
-  if (ideFileMatch) {
-    const fullPath = ideFileMatch[1]!.trim();
-    // Only use this path if it's a markdown file and matches the visible path pattern
-    if (fullPath.endsWith('.md')) {
-      return fullPath;
+  // Extract the visible path from the command args first
+  let visiblePath = "";
+
+  // Look for @-mention paths (e.g., "@notes/file.md")
+  const mentionMatch = /@([\w\-./~]+\.md)/i.exec(trimmed);
+  if (mentionMatch) {
+    visiblePath = mentionMatch[1]!; // Without the @ prefix
+  } else {
+    // Look for file paths with .md extension
+    const pathMatch = /([\w\-./~]+\.md)/i.exec(trimmed);
+    if (pathMatch) {
+      visiblePath = pathMatch[1]!;
     }
   }
 
-  // Look for @-mention paths (e.g., "@notes/file.md")
-  const mentionMatch = /@[\w\-./~]+\.md/i.exec(trimmed);
-  if (mentionMatch) return mentionMatch[0]!;
+  // If we found a visible path, try to match it with an <ide_opened_file> tag
+  if (visiblePath) {
+    // Find all <ide_opened_file> tags in the message
+    const ideFilePattern = /<ide_opened_file>The user opened the file ([^<]+) in the IDE\.<\/ide_opened_file>/gi;
+    const matches = fullMessage.matchAll(ideFilePattern);
 
-  // Look for file paths with .md extension
-  const pathMatch = /[\w\-./~]+\.md/i.exec(trimmed);
-  if (pathMatch) return pathMatch[0]!;
+    for (const match of matches) {
+      const fullPath = match[1]!.trim();
+      // Check if this IDE file matches our visible path
+      // The visible path should be a suffix of the full path
+      if (fullPath.endsWith('.md') && fullPath.endsWith(visiblePath)) {
+        return fullPath;
+      }
+    }
+
+    // No matching IDE file found, return the visible path with @ prefix if it had one
+    return mentionMatch ? `@${visiblePath}` : visiblePath;
+  }
 
   // Return the whole thing if no path pattern found (backward compatible)
   return trimmed;

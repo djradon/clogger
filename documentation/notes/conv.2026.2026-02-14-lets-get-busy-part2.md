@@ -956,3 +956,58 @@ Excellent! All detector tests pass. Let me run the full test suite to ensure eve
 
 Perfect! All 58 tests pass (including the 3 new tests for the `<ide_opened_file>` tag extraction). Let me commit these improvements:
 
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2218_14
+
+Excellent! Here's what was accomplished in this session:
+
+## Path Resolution Enhancements
+
+### 1. Smart Workspace Detection (commit 26424c7)
+Implemented git-based workspace detection that resolves relative paths against the actual project workspace instead of the daemon's current working directory:
+- Extracts project name from encoded session path
+- Searches common patterns: `~/hub/<project>`, `~/hub/*/<project>`, `~/<project>`
+- Verifies with git repository root when available
+- Falls back to `process.cwd()` if workspace not found
+
+### 2. IDE File Tag Extraction (commit 43675cc)  
+Enhanced command detector to extract full absolute paths from `<ide_opened_file>` tags that VSCode provides when files are @-mentioned:
+- When you type `::capture @sflo/documentation/file.md`, VSCode wraps it in a tag with the full path
+- The detector now extracts `/home/djradon/hub/semantic-flow/sflo/documentation/file.md` from the tag
+- Falls back to visible path extraction if no tag present or non-markdown file
+- Also improved to detect commands on any line of the message, not just the first
+
+### Combined Result
+These work together for robust path resolution:
+- **VSCode @-mentions** → Uses full path from `<ide_opened_file>` tag (most reliable)
+- **Relative paths** → Uses workspace detection to resolve against project root  
+- **Absolute/tilde paths** → Uses as-is
+
+All 58 tests passing ✓
+
+# User_2026-02-17_2218_14
+
+You have to make sure you get the right ide_opened_file though, as many could be opened in a chat session. Maybe you check to make sure that the @-mentioned file corresponds to the ide_opened_file
+
+# claude-sonnet-4-5.20250929_2026-02-17_2218_21
+
+You're absolutely right! If there are multiple `<ide_opened_file>` tags in the conversation, we need to verify that the extracted path actually matches the @-mentioned file. Let me fix that:
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2218_37
+
+Now let me add a test to verify this matching behavior works correctly:
+
+
+
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2219_02
+
+Perfect! All 60 tests pass. Let me commit this improvement:
+
