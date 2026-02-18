@@ -1011,3 +1011,138 @@ Now let me add a test to verify this matching behavior works correctly:
 
 Perfect! All 60 tests pass. Let me commit this improvement:
 
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2219_28
+
+Excellent catch! I've fixed the path matching logic. Here's what was accomplished:
+
+## Three Commits for Robust Path Resolution
+
+### 1. Smart Workspace Detection ([26424c7](src/providers/claude-code/workspace.ts))
+- Resolves relative paths against project workspace instead of daemon's cwd
+- Uses git-based detection and common directory patterns
+
+### 2. IDE File Tag Extraction ([43675cc](src/core/detector.ts))
+- Extracts full absolute paths from `<ide_opened_file>` tags that VSCode provides
+- Detects commands on any line of the message, not just the first
+
+### 3. Verified Path Matching ([e0857dd](src/core/detector.ts)) ← **Just committed**
+- Ensures the `<ide_opened_file>` tag actually matches the @-mentioned path
+- When you type `::record @sflo/documentation/file.md`, it now:
+  1. Extracts the visible path: `sflo/documentation/file.md`
+  2. Searches ALL `<ide_opened_file>` tags in the conversation
+  3. Only uses tags where the full path **ends with** the visible path
+  4. Falls back to visible path if no matching tag found
+
+This prevents incorrect path extraction when multiple files have been opened during the conversation.
+
+**All 60 tests passing ✓**
+
+# User_2026-02-17_2224_07
+
+After I issue a stop command and then a capture command in the same "turn" only the stop gets processed.
+
+Then, when I successfully issued capture, the path is wrong... a redundant relative-root segment, e.g.  /home/djradon/hub/semantic-flow/sflo/sflo/documentation/conv.2026.2026-02-12-tough-place.md
+
+# claude-sonnet-4-5.20250929_2026-02-17_2224_23
+
+Let me check the background task output first to see what's happening:
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2224_44
+
+I can see both issues clearly in the logs:
+
+1. **Line 17-18**: `::stop` processed at 06:21:38, `::capture` at 06:22:35 - they were in separate messages
+2. **Line 18**: The redundant path segment: `/home/djradon/hub/semantic-flow/sflo/sflo/documentation/...`
+
+Let me check the actual message in your session to see what happened:
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2225_10
+
+Excellent debugging info! I can see both issues:
+
+**Issue 1: Multiple commands in same message**
+The message at `06:21:09` contains:
+```
+::stop and then
+
+::capture @sflo/documentation/conv.2026.2026-02-12-tough-place.md
+```
+
+But our detector only finds the first command (`::stop`) and returns. It should detect **both** commands.
+
+**Issue 2: Duplicate `sflo` segment**
+The later `::capture` message at `06:22:31` doesn't have the `<ide_opened_file>` tag, so it falls back to workspace resolution:
+- Visible path: `sflo/documentation/conv.2026.2026-02-12-tough-place.md`
+- Workspace root: `/home/djradon/hub/semantic-flow/sflo`
+- Result: `/home/djradon/hub/semantic-flow/sflo/sflo/documentation/...` ← **duplicate!**
+
+The problem is that users type `@sflo/documentation/...` including the project name, but the workspace root already ends with `sflo`. Let me fix both issues:
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2225_16
+
+Let me check how `detectCommand` is used:
+
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2225_27
+
+I need to fix both issues. Let me create a new function to detect all commands and fix the path duplication:
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2225_40
+
+Now let me export the new function and fix the path duplication in monitor.ts:
+
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2225_52
+
+Now let me update monitor.ts to process all commands and fix the path duplication:
+
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2226_09
+
+Now let me fix the path duplication issue. I need to check the resolveOutputPath method:
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2226_23
+
+Let me test these changes:
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2226_31
+
+Perfect! All tests pass. Let me add tests for the new functionality:
+
+
+
+
+
+
+
+
+
+
+
+# claude-sonnet-4-5.20250929_2026-02-17_2227_06
+
+Perfect! Let me commit these fixes:
+

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectCommand } from "../src/core/detector.js";
+import { detectCommand, detectAllCommands } from "../src/core/detector.js";
 
 describe("detectCommand", () => {
   it("detects ::record command with filename", () => {
@@ -156,5 +156,44 @@ More text after`;
     const result = detectCommand(message);
     expect(result?.name).toBe("capture");
     expect(result?.args).toBe("@notes/session.md");
+  });
+});
+
+describe("detectAllCommands", () => {
+  it("detects multiple commands in a single message", () => {
+    const message = `::stop
+
+::capture @notes/session.md`;
+
+    const results = detectAllCommands(message);
+    expect(results).toHaveLength(2);
+    expect(results[0]).toEqual({
+      name: "stop",
+      args: "",
+      rawMessage: message,
+    });
+    expect(results[1]).toEqual({
+      name: "capture",
+      args: "@notes/session.md",
+      rawMessage: message,
+    });
+  });
+
+  it("detects multiple commands with natural language between them", () => {
+    const message = `::stop and then
+
+::capture @path/to/file.md
+
+Let's record this.`;
+
+    const results = detectAllCommands(message);
+    expect(results).toHaveLength(2);
+    expect(results[0]?.name).toBe("stop");
+    expect(results[1]?.name).toBe("capture");
+  });
+
+  it("returns empty array when no commands found", () => {
+    const results = detectAllCommands("just some text");
+    expect(results).toEqual([]);
   });
 });

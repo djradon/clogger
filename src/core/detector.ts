@@ -52,10 +52,11 @@ function extractPath(rawArgs: string, fullMessage: string): string {
   return trimmed;
 }
 
-/** Detect an in-chat command from a user message */
-export function detectCommand(messageText: string): InChatCommand | null {
-  // Check each line for a command (not just first line)
+/** Detect all in-chat commands from a user message */
+export function detectAllCommands(messageText: string): InChatCommand[] {
+  const commands: InChatCommand[] = [];
   const lines = messageText.split("\n");
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
@@ -69,14 +70,20 @@ export function detectCommand(messageText: string): InChatCommand | null {
     const rawArgs = match[2]?.trim() ?? "";
     const args = extractPath(rawArgs, messageText);
 
-    return {
+    commands.push({
       name: name as InChatCommandName,
       args,
       rawMessage: messageText,
-    };
+    });
   }
 
-  return null;
+  return commands;
+}
+
+/** Detect an in-chat command from a user message (returns first match) */
+export function detectCommand(messageText: string): InChatCommand | null {
+  const commands = detectAllCommands(messageText);
+  return commands.length > 0 ? commands[0]! : null;
 }
 
 function isValidCommand(name: string): name is InChatCommandName {

@@ -2,7 +2,7 @@ import { watch, type FSWatcher } from "chokidar";
 import type { Provider } from "../providers/base.js";
 import type { ProviderRegistry } from "../providers/registry.js";
 import type { StateManager } from "./state.js";
-import { detectCommand } from "./detector.js";
+import { detectAllCommands } from "./detector.js";
 import { exportToMarkdown } from "./exporter.js";
 import { ensureMarkdownExtension, expandHome } from "../utils/paths.js";
 import { logger } from "../utils/logger.js";
@@ -152,8 +152,8 @@ export class SessionMonitor {
 
         // Check user messages for in-chat commands
         if (message.role === "user") {
-          const command = detectCommand(message.content);
-          if (command) {
+          const commands = detectAllCommands(message.content);
+          for (const command of commands) {
             // ::capture and ::export do their own full export — skip incremental
             if (command.name === "capture" || command.name === "export") {
               skipIncrementalExport = true;
@@ -295,6 +295,18 @@ export class SessionMonitor {
         ? await provider.resolveWorkspaceRoot(sessionFilePath)
         : undefined;
       const base = workspaceRoot ?? process.cwd();
+
+      // Check if the relative path starts with the workspace's base name
+      // e.g., "sflo/documentation/file.md" when workspace is "/path/to/sflo"
+      // This happens when users type "@sflo/..." in VSCode
+      if (workspaceRoot) {
+        const workspaceBaseName = path.basename(workspaceRoot);
+        if (resolved.startsWith(`${workspaceBaseName}/`)) {
+          // Strip the redundant prefix
+          resolved = resolved.slice(workspaceBaseName.length + 1);
+        }
+      }
+
       resolved = path.resolve(base, resolved);
     }
 
