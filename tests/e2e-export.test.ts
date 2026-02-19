@@ -47,7 +47,7 @@ describe("end-to-end export", () => {
       // Frontmatter
       expect(content).toMatch(/^---\n/);
       expect(content).toContain("title: Auth Discussion");
-      expect(content).toMatch(/id: \w+/);
+      expect(content).toMatch(/id: [\w-]+/);
 
       // User message — italicized with custom name
       expect(content).toContain(`# Dave_${localHeading("2026-02-10T23:36:18.000Z")}`);
