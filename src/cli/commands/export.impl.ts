@@ -25,21 +25,31 @@ export async function exportImpl(
   let sessionFilePath: string | undefined;
   let providerName: string | undefined;
 
+  const matches: Array<{ filePath: string; providerName: string; id: string }> = [];
+
   for (const provider of registry.getAll()) {
     for await (const session of provider.discoverSessions()) {
-      if (session.id === sessionId) {
-        sessionFilePath = session.filePath;
-        providerName = provider.name;
-        break;
+      if (session.id === sessionId || session.id.startsWith(sessionId)) {
+        matches.push({ filePath: session.filePath, providerName: provider.name, id: session.id });
       }
     }
-    if (sessionFilePath) break;
   }
 
-  if (!sessionFilePath || !providerName) {
+  if (matches.length === 0) {
     this.process.stderr.write(`Session "${sessionId}" not found.\n`);
     return;
   }
+
+  if (matches.length > 1) {
+    this.process.stderr.write(
+      `Ambiguous session prefix "${sessionId}" matches ${matches.length} sessions:\n` +
+      matches.map((m) => `  ${m.id}`).join("\n") + "\n",
+    );
+    return;
+  }
+
+  sessionFilePath = matches[0]!.filePath;
+  providerName = matches[0]!.providerName;
 
   const provider = registry.get(providerName)!;
 
