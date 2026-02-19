@@ -208,6 +208,26 @@ More text after`;
     expect(detectCommand("::record 'docs/my session.md'")?.args).toBe("docs/my session.md");
   });
 
+  it("extracts markdown link target path", () => {
+    const message =
+      "::capture [conv.2026.2026-02-19-excessive-newlines.md](documentation/notes/conv.2026.2026-02-19-excessive-newlines.md)";
+    const result = detectCommand(message);
+    expect(result?.name).toBe("capture");
+    expect(result?.args).toBe(
+      "documentation/notes/conv.2026.2026-02-19-excessive-newlines.md",
+    );
+  });
+
+  it("extracts markdown link target for @-mention-style labels", () => {
+    const message =
+      "::record [@conv.2026.2026-02-19-excessive-newlines.md](documentation/notes/conv.2026.2026-02-19-excessive-newlines.md)";
+    const result = detectCommand(message);
+    expect(result?.name).toBe("record");
+    expect(result?.args).toBe(
+      "documentation/notes/conv.2026.2026-02-19-excessive-newlines.md",
+    );
+  });
+
   it("accepts filename without .md extension (extension added later)", () => {
     expect(detectCommand("::record my-session")?.args).toBe("my-session");
     expect(detectCommand("::capture notes/todays-log")?.args).toBe("notes/todays-log");

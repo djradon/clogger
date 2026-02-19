@@ -1,4 +1,5 @@
 import { watch, type FSWatcher } from "chokidar";
+import { createHash } from "node:crypto";
 import type { Provider } from "../providers/base.js";
 import type { ProviderRegistry } from "../providers/registry.js";
 import type { StateManager } from "./state.js";
@@ -8,6 +9,28 @@ import { ensureMarkdownExtension, expandHome } from "../utils/paths.js";
 import { logger } from "../utils/logger.js";
 import type { StenobotConfig, Message } from "../types/index.js";
 import path from "node:path";
+
+const RECORDING_DEBUG = process.env["STENOBOT_RECORDING_DEBUG"] === "1";
+
+function shortHash(text: string): string {
+  return createHash("sha1").update(text).digest("hex").slice(0, 12);
+}
+
+function summarizeMessages(messages: Message[]): Array<{
+  id: string;
+  role: Message["role"];
+  timestamp: string;
+  contentChars: number;
+  contentHash: string;
+}> {
+  return messages.slice(0, 10).map((m) => ({
+    id: m.id,
+    role: m.role,
+    timestamp: m.timestamp,
+    contentChars: m.content.length,
+    contentHash: shortHash(m.content),
+  }));
+}
 
 /** Convert a string to a URL-safe slug for use in auto-generated filenames */
 function slugify(text: string): string {
@@ -162,6 +185,14 @@ export class SessionMonitor {
   ): Promise<void> {
     const sessionState = this.state.getState().sessions[sessionId];
     const fromOffset = sessionState?.lastProcessedOffset ?? 0;
+    if (RECORDING_DEBUG) {
+      logger.info("Recording debug: poll start", {
+        sessionId,
+        provider: provider.name,
+        filePath,
+        fromOffset,
+      });
+    }
 
     const newMessages: Message[] = [];
     let latestOffset = fromOffset;
@@ -199,7 +230,26 @@ export class SessionMonitor {
       return;
     }
 
-    if (newMessages.length === 0) return;
+    if (RECORDING_DEBUG) {
+      logger.info("Recording debug: parse result", {
+        sessionId,
+        provider: provider.name,
+        fromOffset,
+        latestOffset,
+        parsedMessageCount: newMessages.length,
+        sampleMessages: summarizeMessages(newMessages),
+      });
+    }
+
+    if (newMessages.length === 0) {
+      if (RECORDING_DEBUG) {
+        logger.info("Recording debug: poll end", {
+          sessionId,
+          reason: "no-new-messages",
+        });
+      }
+      return;
+    }
 
     // Update state with latest offset
     this.state.updateSession(sessionId, {
@@ -215,6 +265,18 @@ export class SessionMonitor {
       const messagesToExport =
         recordStartIndex >= 0 ? newMessages.slice(recordStartIndex) : newMessages;
 
+      if (RECORDING_DEBUG) {
+        logger.info("Recording debug: export decision", {
+          sessionId,
+          outputFile: recording.outputFile,
+          skipIncrementalExport,
+          recordStartIndex,
+          newMessageCount: newMessages.length,
+          exportMessageCount: messagesToExport.length,
+          exportSample: summarizeMessages(messagesToExport),
+        });
+      }
+
       if (messagesToExport.length > 0) {
         try {
           await exportToMarkdown(messagesToExport, recording.outputFile, {
@@ -224,10 +286,23 @@ export class SessionMonitor {
             ...recording,
             lastExported: new Date().toISOString(),
           });
+          if (RECORDING_DEBUG) {
+            logger.info("Recording debug: export success", {
+              sessionId,
+              outputFile: recording.outputFile,
+              exportedMessageCount: messagesToExport.length,
+            });
+          }
         } catch (error) {
           logger.error("Error exporting messages", { sessionId, error });
         }
       }
+    } else if (RECORDING_DEBUG) {
+      logger.info("Recording debug: export skipped", {
+        sessionId,
+        hasRecording: Boolean(recording),
+        skipIncrementalExport,
+      });
     }
   }
 

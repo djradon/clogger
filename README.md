@@ -43,6 +43,7 @@ That's it. The daemon watches `~/.claude/projects/` and `~/.claude-personal/proj
 | `stenobot init` | Generate `~/.stenobot/config.yaml` with all defaults |
 | `stenobot start` | Start the monitoring daemon (returns immediately) |
 | `stenobot stop` | Stop the daemon |
+| `stenobot restart` | Restart the daemon (`stop` then `start`) |
 | `stenobot status` | Show active sessions and recordings |
 | `stenobot export <session-id>` | One-shot export of a session to markdown |
 | `stenobot clean` | Clean recordings and/or sessions |

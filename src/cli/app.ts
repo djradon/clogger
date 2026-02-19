@@ -1,6 +1,7 @@
 import { buildApplication, buildRouteMap } from "@stricli/core";
 import { startCommand } from "./commands/start.js";
 import { stopCommand } from "./commands/stop.js";
+import { restartCommand } from "./commands/restart.js";
 import { statusCommand } from "./commands/status.js";
 import { exportCommand } from "./commands/export.js";
 import { cleanCommand } from "./commands/clean.js";
@@ -12,6 +13,7 @@ const routes = buildRouteMap({
     init: initCommand,
     start: startCommand,
     stop: stopCommand,
+    restart: restartCommand,
     status: statusCommand,
     export: exportCommand,
     clean: cleanCommand,
