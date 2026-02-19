@@ -25,6 +25,8 @@ export class SessionMonitor {
   private watchers = new Map<string, FSWatcher>();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private saveTimer: ReturnType<typeof setInterval> | null = null;
+  /** Sessions currently being processed — prevents concurrent duplicate runs */
+  private processingSession = new Set<string>();
 
   constructor(
     private readonly registry: ProviderRegistry,
@@ -140,6 +142,21 @@ export class SessionMonitor {
 
   /** Process new messages in a session file */
   private async processSession(
+    provider: Provider,
+    filePath: string,
+    sessionId: string,
+  ): Promise<void> {
+    if (this.processingSession.has(sessionId)) return;
+    this.processingSession.add(sessionId);
+
+    try {
+      await this._doProcessSession(provider, filePath, sessionId);
+    } finally {
+      this.processingSession.delete(sessionId);
+    }
+  }
+
+  private async _doProcessSession(
     provider: Provider,
     filePath: string,
     sessionId: string,

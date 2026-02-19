@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import type { Message, ToolCall, ThinkingBlock } from "../../types/index.js";
+import { normalizeText } from "../../utils/text.js";
 
 // ---------------------------------------------------------------------------
 // Raw JSONL entry types (internal)
@@ -205,12 +206,9 @@ function makeMessage(
   thinkingBlocks: ThinkingBlock[],
   model?: string,
 ): Message {
-  // Join text parts and collapse runs of 3+ newlines down to 2
-  const content = textParts
-    .filter((p) => p.length > 0)
-    .join("\n\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  const content = normalizeText(
+    textParts.filter((p) => p.length > 0).join("\n\n"),
+  );
 
   return {
     id: uuid,
