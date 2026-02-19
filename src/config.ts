@@ -36,7 +36,13 @@ const DEFAULT_CONFIG: CloggerConfig = {
   },
 };
 
-const CONFIG_TEMPLATE = `# Clogger Configuration
+function buildConfigTemplate(): string {
+  const win = process.platform === "win32";
+  // Use single-quoted YAML strings on Windows so backslashes need no escaping
+  const q = win ? "'" : '"';
+  const slash = (p: string) => (win ? p.replace(/\//g, "\\") : p);
+
+  return `# Clogger Configuration
 # All settings shown with their defaults. CLI flags override on a per-invocation basis.
 
 providers:
@@ -44,13 +50,13 @@ providers:
     enabled: true
     # Paths where Claude Code stores session files
     sessionPaths:
-      - "~/.claude/projects/"
-      - "~/.claude-personal/projects/"
+      - ${q}${slash("~/.claude/projects/")}${q}
+      - ${q}${slash("~/.claude-personal/projects/")}${q}
     # Optional: set a default export path for this provider
-    # exportPath: "~/my-exports"
+    # exportPath: ${q}${slash("~/my-exports")}${q}
 
 # Default directory for exported markdown files
-outputDirectory: "~/clogger-output"
+outputDirectory: ${q}${slash("~/clogger-output")}${q}
 
 # Filename template for auto-generated exports
 # Tokens: {provider}, {date}, {session-short}
@@ -77,9 +83,10 @@ monitoring:
   maxSessionAge: 600000
 
 daemon:
-  pidFile: "~/.clogger/daemon.pid"
-  logFile: "~/.clogger/daemon.log"
+  pidFile: ${q}${slash("~/.clogger/daemon.pid")}${q}
+  logFile: ${q}${slash("~/.clogger/daemon.log")}${q}
 `;
+}
 
 function deepMerge<T>(defaults: T, overrides: Partial<T>): T {
   const result = { ...defaults } as T;
@@ -128,6 +135,6 @@ export async function generateDefaultConfig(
   }
 
   await fs.mkdir(getCloggerDir(), { recursive: true });
-  await fs.writeFile(configPath, CONFIG_TEMPLATE, "utf-8");
+  await fs.writeFile(configPath, buildConfigTemplate(), "utf-8");
   return { created: true, path: configPath };
 }
