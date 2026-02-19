@@ -2,7 +2,7 @@
 id: 4a39f79yf72wtu9kbt0ijlk
 title: Product Ideas
 desc: ''
-updated: 1771528176617
+updated: 1771535796005
 created: 1771480304848
 ---
 
@@ -10,3 +10,5 @@ created: 1771480304848
 - add scanning for .codex/.claude folders even if not initially present
 - support restart and reload CLI commands
 - handle recording of "choices" options and chosen option
+- support for gemini, kimi, etc
+- add an "interlocutors" YAML field, and maybe a sessionId filed as well. 

@@ -2,7 +2,7 @@
 id: tm3crln4s61fqy8tnpj73gv
 title: 2026 02 19 Codex Support Implementation
 desc: ''
-updated: 1771529792758
+updated: 1771535600042
 created: 1771529792758
 ---
 
@@ -14,266 +14,41 @@ codex support implementation
 
 Let's tackle @documentation/notes/task.2026.2026-02-19-codex-support.md
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1145_33
+# claude-sonnet-4.6_2026-02-19_1137_25
 
 Now I have a complete picture. Let me set up the todos and start implementing.
 
-# claude-sonnet-4.6_2026-02-19_1145_33
-
-Now I have a complete picture. Let me set up the todos and start implementing.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1149_05
-
 Now I'll create the Codex provider index with `getSessionLabel`, and simultaneously update the base provider interface:
-
-# claude-sonnet-4.6_2026-02-19_1149_05
-
-Now I'll create the Codex provider index with `getSessionLabel`, and simultaneously update the base provider interface:
-
-
-
-# claude-sonnet-4.6_2026-02-19_1149_20
 
 Now update the base Provider interface to add `getSessionLabel`:
 
-# claude-sonnet-4.6_2026-02-19_1149_20
-
-Now update the base Provider interface to add `getSessionLabel`:
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1149_35
-
 Now add `getSessionLabel` to `ClaudeCodeProvider`, porting the logic from `monitor.ts:getFirstUserMessage`:
-
-# claude-sonnet-4.6_2026-02-19_1149_35
-
-Now add `getSessionLabel` to `ClaudeCodeProvider`, porting the logic from `monitor.ts:getFirstUserMessage`:
-
-
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1150_01
 
 Now register the CodexProvider in the registry, add codex to config, and update types — doing these in parallel:
 
-# claude-sonnet-4.6_2026-02-19_1150_01
-
-Now register the CodexProvider in the registry, add codex to config, and update types — doing these in parallel:
-
-
-
-
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1150_29
-
 Now update config.ts to add codex defaults, and types/index.ts to add provider field:
-
-# claude-sonnet-4.6_2026-02-19_1150_29
-
-Now update config.ts to add codex defaults, and types/index.ts to add provider field:
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1150_35
 
 The tool is strict - I already read config.ts but since I haven't written to it in this session yet, I need to re-read. Let me edit both files properly:
 
-# claude-sonnet-4.6_2026-02-19_1150_35
-
-The tool is strict - I already read config.ts but since I haven't written to it in this session yet, I need to re-read. Let me edit both files properly:
-
-
-
-# claude-sonnet-4.6_2026-02-19_1150_43
-
 Now add the codex block to `buildConfigTemplate`:
-
-# claude-sonnet-4.6_2026-02-19_1150_43
-
-Now add the codex block to `buildConfigTemplate`:
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1150_53
 
 Now add `provider` to the AppState sessions type:
 
-# claude-sonnet-4.6_2026-02-19_1150_53
-
-Now add `provider` to the AppState sessions type:
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1151_04
-
 Now update `monitor.ts` to store `provider` in session state and use `provider.getSessionLabel`:
-
-# claude-sonnet-4.6_2026-02-19_1151_04
-
-Now update `monitor.ts` to store `provider` in session state and use `provider.getSessionLabel`:
-
-
-
-
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1151_24
 
 Now I'll make the monitor.ts changes. I need to read the whole file first since I need to make multiple edits:
 
-# claude-sonnet-4.6_2026-02-19_1151_24
-
-Now I'll make the monitor.ts changes. I need to read the whole file first since I need to make multiple edits:
-
-
-
-# claude-sonnet-4.6_2026-02-19_1151_37
-
 The `fs` import is still needed by `getFirstUserMessage`. I need to replace that method's usage before removing the import. Let me do both changes together:
-
-# claude-sonnet-4.6_2026-02-19_1151_37
-
-The `fs` import is still needed by `getFirstUserMessage`. I need to replace that method's usage before removing the import. Let me do both changes together:
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1151_46
 
 Now delete the unused `getFirstUserMessage` method and add `provider` to `updateSession`:
 
-# claude-sonnet-4.6_2026-02-19_1151_46
-
-Now delete the unused `getFirstUserMessage` method and add `provider` to `updateSession`:
-
-
-
-# claude-sonnet-4.6_2026-02-19_1151_55
-
 Now add `provider: provider.name` to the `updateSession` call:
-
-# claude-sonnet-4.6_2026-02-19_1151_55
-
-Now add `provider: provider.name` to the `updateSession` call:
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1152_13
 
 Now update `status.impl.ts` to use the provider registry for session labels:
 
-# claude-sonnet-4.6_2026-02-19_1152_13
-
-Now update `status.impl.ts` to use the provider registry for session labels:
-
-
-
-
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1153_09
-
 Now create the three test files:
 
-# claude-sonnet-4.6_2026-02-19_1153_09
-
-Now create the three test files:
-
-
-
-
-
-
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1155_18
-
 Good — all 108 tests pass, but there's 1 unhandled error from `CodexProvider.getSessionLabel` with nonexistent files. The readline stream doesn't fully swallow `ENOENT`. Fix: use `fs.readFile` instead of readline for `getSessionLabel` (consistent with `ClaudeCodeProvider`):
-
-# claude-sonnet-4.6_2026-02-19_1155_18
-
-Good — all 108 tests pass, but there's 1 unhandled error from `CodexProvider.getSessionLabel` with nonexistent files. The readline stream doesn't fully swallow `ENOENT`. Fix: use `fs.readFile` instead of readline for `getSessionLabel` (consistent with `ClaudeCodeProvider`):
-
-
-
-# <synthetic>_2026-02-19_1155_20
-
-You've hit your limit · resets 1pm (America/Los_Angeles)
-
-# <synthetic>_2026-02-19_1155_20
 
 You've hit your limit · resets 1pm (America/Los_Angeles)
 
@@ -281,33 +56,11 @@ You've hit your limit · resets 1pm (America/Los_Angeles)
 
 I raised my "extra usage" spending limit, please continue.
 
-# User_2026-02-19_1158_19
-
-I raised my "extra usage" spending limit, please continue.
-
-
-
-
-
-# claude-sonnet-4.6_2026-02-19_1158_53
+# claude-sonnet-4.6_2026-02-19_1158_25
 
 All 108 tests pass, no errors. Let me also run a typecheck to confirm no TypeScript issues:
 
-# claude-sonnet-4.6_2026-02-19_1158_53
-
-All 108 tests pass, no errors. Let me also run a typecheck to confirm no TypeScript issues:
-
-# claude-sonnet-4.6_2026-02-19_1158_59
-
 Clean. Let me mark the final task done:
-
-# claude-sonnet-4.6_2026-02-19_1158_59
-
-Clean. Let me mark the final task done:
-
-
-
-# claude-sonnet-4.6_2026-02-19_1159_23
 
 All done. Here's a summary of everything implemented:
 
@@ -333,3 +86,53 @@ All done. Here's a summary of everything implemented:
 - [src/types/index.ts](src/types/index.ts) — added `provider?: string` to `AppState.sessions`
 - [src/core/monitor.ts](src/core/monitor.ts) — stores `provider: provider.name` in session state; delegates `getFirstUserMessage` to `provider.getSessionLabel`; removed Claude-specific JSONL parsing
 - [src/cli/commands/status.impl.ts](src/cli/commands/status.impl.ts) — uses `ProviderRegistry` + `provider.getSessionLabel` for labels; format is now `"codex: ..."` / `"claude-code: ..."`
+
+# User_2026-02-19_1201_09
+
+::capture @documentation/notes/conv.2026.2026-02-19-codex-support-implementation.md
+
+# claude-sonnet-4.6_2026-02-19_1201_16
+
+Noted — stenobot will handle the `::capture` export to [conv.2026.2026-02-19-codex-support-implementation.md](documentation/notes/conv.2026.2026-02-19-codex-support-implementation.md).
+
+# User_2026-02-19_1208_40
+
+Thank you. What is the difference between (i.e., why do we need both) codex-session-vscode-new.jsonl and codex-session-exec.jsonl
+
+# claude-sonnet-4.6_2026-02-19_1208_52
+
+They serve opposite testing roles:
+
+**`codex-session-vscode-new.jsonl`** — a real conversation session (`source: "vscode"`) that stenobot **should** discover and process. It exercises the full happy path: preamble stripping, tool calls, reasoning, `final_answer`/`task_complete` dedup, multi-turn, etc.
+
+**`codex-session-exec.jsonl`** — a sandboxed sub-agent stub (`source: "exec"`) that stenobot **must silently skip**. Codex creates these alongside VSCode sessions when it spawns a sub-process to execute code. They're very short, contain no real conversation, and are noise.
+
+The exec fixture is a **negative test case** — it verifies that `discoverCodexSessions` filters it out and that `CodexProvider.getSessionLabel` returns `null` for it. Without a concrete exec fixture, those filter paths would go untested and a future refactor could accidentally start ingesting exec stubs.
+
+In short: one tests the "process this" branch, the other tests the "skip this" branch.
+
+# User_2026-02-19_1302_51
+
+Do we need to update any documentation? Maybe @documentation/notes/dev.general-guidance.md
+
+# claude-sonnet-4.6_2026-02-19_1303_00
+
+Yes, `dev.general-guidance.md` needs one line updated — the provider list is stale. There's also a stale `~/.clogger/` reference (the actual path is `~/.stenobot/`) that predates the rename, but I'll leave that for you to decide since it's pre-existing. The product ideas file looks fine as-is.
+
+That's the only documentation change needed. The stale `~/.clogger/` path on line 31 is a pre-existing issue from before the rename — worth fixing separately if you want, but it's not related to this task.
+
+# User_2026-02-19_1311_53
+
+You don't want to describe the registry?
+
+# claude-sonnet-4.6_2026-02-19_1311_56
+
+Good point.
+
+# User_2026-02-19_1313_39
+
+::capture @documentation/notes/conv.2026.2026-02-19-codex-support-implementation.md
+
+# claude-sonnet-4.6_2026-02-19_1313_42
+
+Noted — stenobot will capture the full session to [conv.2026.2026-02-19-codex-support-implementation.md](documentation/notes/conv.2026.2026-02-19-codex-support-implementation.md).

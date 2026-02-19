@@ -18,6 +18,7 @@ const FILE_COMMANDS = new Set<InChatCommandName>(["record", "capture", "export"]
  *
  * Recognised forms (in order):
  *  - Quoted: "path/to file.md" or 'path/to file.md'
+ *  - Markdown link: [label](path/to/file.md)
  *  - @-mention: @notes/file.md  (with optional <ide_opened_file> resolution)
  *  - .md path: notes/file.md    (with optional <ide_opened_file> resolution)
  *  - No-space token: my-notes, ~/notes, /abs/path, C:\Users\..., \\server\share\...
@@ -39,6 +40,12 @@ function extractPath(rawArgs: string, fullMessage: string): string | null {
   const quotedMatch = /^["'](.+?)["']/.exec(trimmed);
   if (quotedMatch) {
     return quotedMatch[1]!;
+  }
+
+  // Markdown link path: [label](path/to/file.md)
+  const markdownLinkMatch = /\[[^\]]+]\(([^)\n]+\.md)\)/i.exec(trimmed);
+  if (markdownLinkMatch) {
+    return markdownLinkMatch[1]!.trim();
   }
 
   // @-mention path (e.g. @notes/file.md)
