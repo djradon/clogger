@@ -3,11 +3,11 @@ import path from "node:path";
 import { stringify as yamlStringify } from "yaml";
 import { formatInTimeZone } from "date-fns-tz";
 import { nanoid } from "nanoid";
-import type { Message, CloggerConfig } from "../types/index.js";
+import type { Message, StenobotConfig } from "../types/index.js";
 
 export interface ExportOptions {
   title?: string;
-  metadata: CloggerConfig["metadata"];
+  metadata: StenobotConfig["metadata"];
   speakerNames?: {
     user?: string;
     assistant?: string;

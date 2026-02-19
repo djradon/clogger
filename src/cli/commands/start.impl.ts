@@ -15,7 +15,7 @@ export async function startImpl(
   _flags: StartFlags,
 ): Promise<void> {
   // Daemon worker path: we are the background child process
-  if (process.env["CLOGGER_DAEMON_MODE"] === "1") {
+  if (process.env["STENOBOT_DAEMON_MODE"] === "1") {
     await runDaemon(this);
     return;
   }
@@ -43,7 +43,7 @@ export async function startImpl(
         try {
           process.kill(existingPid, 0);
           this.process.stdout.write(
-            `clogger daemon is already running (PID: ${existingPid})\n`,
+            `stenobot daemon is already running (PID: ${existingPid})\n`,
           );
           return;
         } catch {
@@ -59,17 +59,17 @@ export async function startImpl(
       await fs.writeFile(pidFile, "starting", { flag: "wx" });
     } catch {
       this.process.stderr.write(
-        "Could not acquire PID file. Is another `clogger start` running?\n",
+        "Could not acquire PID file. Is another `stenobot start` running?\n",
       );
       return;
     }
   }
 
-  // Spawn detached child with CLOGGER_DAEMON_MODE=1
+  // Spawn detached child with STENOBOT_DAEMON_MODE=1
   const child = spawn(this.process.execPath, this.process.argv.slice(1), {
     detached: true,
     stdio: "ignore",
-    env: { ...this.process.env, CLOGGER_DAEMON_MODE: "1" },
+    env: { ...this.process.env, STENOBOT_DAEMON_MODE: "1" },
   });
 
   if (child.pid === undefined) {
@@ -80,7 +80,7 @@ export async function startImpl(
 
   child.unref();
   await fs.writeFile(pidFile, String(child.pid), "utf-8");
-  this.process.stdout.write(`clogger daemon started (PID: ${child.pid})\n`);
+  this.process.stdout.write(`stenobot daemon started (PID: ${child.pid})\n`);
 }
 
 async function runDaemon(ctx: LocalContext): Promise<void> {

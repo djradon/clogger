@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as yamlParse } from "yaml";
-import type { CloggerConfig } from "./types/index.js";
-import { getCloggerDir } from "./utils/paths.js";
+import type { StenobotConfig } from "./types/index.js";
+import { getStenobotDir } from "./utils/paths.js";
 
 const CONFIG_FILE = "config.yaml";
 
-const DEFAULT_CONFIG: CloggerConfig = {
+const DEFAULT_CONFIG: StenobotConfig = {
   providers: {
     "claude-code": {
       enabled: true,
@@ -16,7 +16,7 @@ const DEFAULT_CONFIG: CloggerConfig = {
       ],
     },
   },
-  outputDirectory: "~/clogger-output",
+  outputDirectory: "~/stenobot-output",
   fileNamingTemplate: "conv.{provider}.{date}.{session-short}.md",
   metadata: {
     includeTimestamps: true,
@@ -31,8 +31,8 @@ const DEFAULT_CONFIG: CloggerConfig = {
     maxSessionAge: 600000,
   },
   daemon: {
-    pidFile: "~/.clogger/daemon.pid",
-    logFile: "~/.clogger/daemon.log",
+    pidFile: "~/.stenobot/daemon.pid",
+    logFile: "~/.stenobot/daemon.log",
   },
 };
 
@@ -42,7 +42,7 @@ function buildConfigTemplate(): string {
   const q = win ? "'" : '"';
   const slash = (p: string) => (win ? p.replace(/\//g, "\\") : p);
 
-  return `# Clogger Configuration
+  return `# Stenobot Configuration
 # All settings shown with their defaults. CLI flags override on a per-invocation basis.
 
 providers:
@@ -56,7 +56,7 @@ providers:
     # exportPath: ${q}${slash("~/my-exports")}${q}
 
 # Default directory for exported markdown files
-outputDirectory: ${q}${slash("~/clogger-output")}${q}
+outputDirectory: ${q}${slash("~/stenobot-output")}${q}
 
 # Filename template for auto-generated exports
 # Tokens: {provider}, {date}, {session-short}
@@ -83,8 +83,8 @@ monitoring:
   maxSessionAge: 600000
 
 daemon:
-  pidFile: ${q}${slash("~/.clogger/daemon.pid")}${q}
-  logFile: ${q}${slash("~/.clogger/daemon.log")}${q}
+  pidFile: ${q}${slash("~/.stenobot/daemon.pid")}${q}
+  logFile: ${q}${slash("~/.stenobot/daemon.log")}${q}
 `;
 }
 
@@ -107,12 +107,12 @@ function deepMerge<T>(defaults: T, overrides: Partial<T>): T {
 }
 
 /** Load config from disk, falling back to defaults */
-export async function loadConfig(): Promise<CloggerConfig> {
-  const configPath = path.join(getCloggerDir(), CONFIG_FILE);
+export async function loadConfig(): Promise<StenobotConfig> {
+  const configPath = path.join(getStenobotDir(), CONFIG_FILE);
 
   try {
     const raw = await fs.readFile(configPath, "utf-8");
-    const userConfig = yamlParse(raw) as Partial<CloggerConfig>;
+    const userConfig = yamlParse(raw) as Partial<StenobotConfig>;
     return deepMerge(DEFAULT_CONFIG, userConfig);
   } catch {
     return DEFAULT_CONFIG;
@@ -123,7 +123,7 @@ export async function loadConfig(): Promise<CloggerConfig> {
 export async function generateDefaultConfig(
   force = false,
 ): Promise<{ created: boolean; path: string }> {
-  const configPath = path.join(getCloggerDir(), CONFIG_FILE);
+  const configPath = path.join(getStenobotDir(), CONFIG_FILE);
 
   if (!force) {
     try {
@@ -134,7 +134,7 @@ export async function generateDefaultConfig(
     }
   }
 
-  await fs.mkdir(getCloggerDir(), { recursive: true });
+  await fs.mkdir(getStenobotDir(), { recursive: true });
   await fs.writeFile(configPath, buildConfigTemplate(), "utf-8");
   return { created: true, path: configPath };
 }

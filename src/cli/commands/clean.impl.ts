@@ -99,7 +99,7 @@ export async function cleanImpl(
     this.process.stdout.write(
       chalk.yellow("No cleanup options specified.\n") +
       "Use --recordings <days>, --sessions <days>, or --all\n" +
-      "Run 'clogger clean --help' for more information.\n"
+      "Run 'stenobot clean --help' for more information.\n"
     );
     return;
   }

@@ -21,7 +21,7 @@ const routes = buildRouteMap({
 });
 
 export const app = buildApplication(routes, {
-  name: "clogger",
+  name: "stenobot",
   versionInfo: {
     currentVersion: "0.1.0",
   },

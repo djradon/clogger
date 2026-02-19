@@ -3,7 +3,7 @@ export type {
   Message,
   Session,
   AppState,
-  CloggerConfig,
+  StenobotConfig,
   InChatCommand,
 } from "./types/index.js";
 export { ProviderRegistry } from "./providers/registry.js";

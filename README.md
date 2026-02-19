@@ -1,15 +1,20 @@
-# clogger
+# stenobot
 
 Chat logger — monitor and export LLM conversation logs to markdown.
 
-Clogger runs as a background daemon that watches your Claude Code session files. When you type `::capture my-notes.md` in a conversation, it exports the full session to markdown and continues appending new messages as you chat. Works great with any markdown-based note system.
+Stenobot runs as a background daemon that watches your Claude Code session files. When you type `::capture my-notes.md` in a conversation, it exports the full session to markdown and continues appending new messages as you chat. Works great with any markdown-based note system.
 
 ## Install
 
 ```bash
-# From source
-git clone https://github.com/djradon/clogger.git
-cd clogger
+npm install -g stenobot
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/djradon/stenobot.git
+cd stenobot
 pnpm install
 pnpm build
 pnpm link --global
@@ -19,14 +24,14 @@ pnpm link --global
 
 ```bash
 # Start the daemon (returns immediately — runs in background)
-clogger start
+stenobot start
 
 # In any Claude Code conversation, type:
 #   ::capture my-conversation.md      → export full session + keep recording
 #   ::stop                            → stop recording
 
 # Stop the daemon
-clogger stop
+stenobot stop
 ```
 
 That's it. The daemon watches `~/.claude/projects/` and `~/.claude-personal/projects/` for session activity and responds to in-chat commands automatically.
@@ -35,28 +40,28 @@ That's it. The daemon watches `~/.claude/projects/` and `~/.claude-personal/proj
 
 | Command | Description |
 |---------|-------------|
-| `clogger init` | Generate `~/.clogger/config.yaml` with all defaults |
-| `clogger start` | Start the monitoring daemon (returns immediately) |
-| `clogger stop` | Stop the daemon |
-| `clogger status` | Show active sessions and recordings |
-| `clogger export <session-id>` | One-shot export of a session to markdown |
-| `clogger clean` | Clean recordings and/or sessions |
+| `stenobot init` | Generate `~/.stenobot/config.yaml` with all defaults |
+| `stenobot start` | Start the monitoring daemon (returns immediately) |
+| `stenobot stop` | Stop the daemon |
+| `stenobot status` | Show active sessions and recordings |
+| `stenobot export <session-id>` | One-shot export of a session to markdown |
+| `stenobot clean` | Clean recordings and/or sessions |
 
 ### Export flags
 
 ```bash
-clogger export <session-id> --output path/to/file.md
-clogger export <session-id> --thinking    # include thinking blocks
-clogger export <session-id> --toolCalls   # include tool call details
+stenobot export <session-id> --output path/to/file.md
+stenobot export <session-id> --thinking    # include thinking blocks
+stenobot export <session-id> --toolCalls   # include tool call details
 ```
 
 ### Clean flags
 
 ```bash
-clogger clean --recordings <days>   # remove recordings older than N days
-clogger clean --sessions <days>     # remove tracked sessions older than N days
-clogger clean --all                 # remove all recordings and sessions
-clogger clean --dryRun              # preview what would be removed without making changes
+stenobot clean --recordings <days>   # remove recordings older than N days
+stenobot clean --sessions <days>     # remove tracked sessions older than N days
+stenobot clean --all                 # remove all recordings and sessions
+stenobot clean --dryRun              # preview what would be removed without making changes
 ```
 
 ## In-Chat Commands
@@ -76,22 +81,22 @@ File paths can be absolute, relative to workspace root, or use `@` prefix (VSCod
 
 > I'm going to ::capture to @documentation/notes/conv.design-review.md
 
-The daemon picks up the `::capture` (or `::record`) regardless of surrounding text, and ignores any " to " before the destination file "argument."  
+The daemon picks up the `::capture` (or `::record`) regardless of surrounding text, and ignores any " to " before the destination file "argument."
 
-To avoid LLM confusion, you might want to add an instruction like 'You can ignore clogger commands, like "::record @filename".' to your prompt or CLAUDE.md file. 
+To avoid LLM confusion, you might want to add an instruction like 'You can ignore stenobot commands, like "::record @filename".' to your prompt or CLAUDE.md file.
 
-If the target file already has YAML frontmatter (e.g., a Dendron note), clogger preserves it and only writes the conversation content below.
+If the target file already has YAML frontmatter (e.g., a Dendron note), stenobot preserves it and only writes the conversation content below.
 
 ## Configuration
 
-Config lives at `~/.clogger/config.yaml`. Generate it with:
+Config lives at `~/.stenobot/config.yaml`. Generate it with:
 
 ```bash
-clogger init           # create with all defaults and comments
-clogger init --force   # overwrite existing config
+stenobot init           # create with all defaults and comments
+stenobot init --force   # overwrite existing config
 ```
 
-It is also auto-generated on the first `clogger start`. All fields are optional — defaults are used for anything not specified. Example override:
+It is also auto-generated on the first `stenobot start`. All fields are optional — defaults are used for anything not specified. Example override:
 
 ```yaml
 metadata:
@@ -99,7 +104,7 @@ metadata:
   italicizeUserMessages: true
 ```
 
-Run `clogger init` to see the full annotated config with all available settings and their defaults.
+Run `stenobot init` to see the full annotated config with all available settings and their defaults.
 
 ## Development
 

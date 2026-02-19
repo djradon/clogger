@@ -6,7 +6,7 @@ import { detectAllCommands } from "./detector.js";
 import { exportToMarkdown } from "./exporter.js";
 import { ensureMarkdownExtension, expandHome } from "../utils/paths.js";
 import { logger } from "../utils/logger.js";
-import type { CloggerConfig, Message } from "../types/index.js";
+import type { StenobotConfig, Message } from "../types/index.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -29,7 +29,7 @@ export class SessionMonitor {
   constructor(
     private readonly registry: ProviderRegistry,
     private readonly state: StateManager,
-    private readonly config: CloggerConfig,
+    private readonly config: StenobotConfig,
   ) {}
 
   /** Start monitoring all enabled providers */

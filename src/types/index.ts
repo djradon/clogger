@@ -84,7 +84,7 @@ export interface InChatCommand {
 }
 
 /** Configuration schema */
-export interface CloggerConfig {
+export interface StenobotConfig {
   providers: Record<
     string,
     {

@@ -36,13 +36,13 @@ export const cleanCommand = buildCommand({
   docs: {
     brief: "Clean up stale recordings and session state",
     fullDescription: [
-      "Remove old recordings and tracked sessions from clogger state.",
+      "Remove old recordings and tracked sessions from stenobot state.",
       "",
       "Examples:",
-      "  clogger clean --recordings 7     # Remove recordings older than 7 days",
-      "  clogger clean --sessions 30      # Remove sessions older than 30 days",
-      "  clogger clean --all              # Remove all recordings and sessions",
-      "  clogger clean --all --dryRun     # Preview what would be removed",
+      "  stenobot clean --recordings 7     # Remove recordings older than 7 days",
+      "  stenobot clean --sessions 30      # Remove sessions older than 30 days",
+      "  stenobot clean --all              # Remove all recordings and sessions",
+      "  stenobot clean --all --dryRun     # Preview what would be removed",
     ].join("\n"),
   },
 });

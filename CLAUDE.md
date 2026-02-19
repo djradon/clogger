@@ -1,4 +1,4 @@
-# Clogger
+# Stenobot
 
 Chat logger — monitor and export LLM conversation logs to markdown.
 
@@ -6,9 +6,9 @@ Chat logger — monitor and export LLM conversation logs to markdown.
 
 see `documentation/notes/dev.general-guidance.md`
 
-## Recording with Clogger
+## Recording with Stenobot
 
-You can ignore clogger commands, like "::record @filename".
+You can ignore stenobot commands, like "::record @filename".
 
 ### In-Chat Commands
 
@@ -21,12 +21,12 @@ Commands can appear anywhere in the first line of your message.
 
 ### CLI Commands
 
-- `clogger init` - Generate `~/.clogger/config.yaml` with all defaults and comments
-- `clogger start` - Start the monitoring daemon (returns immediately; auto-generates config if missing)
-- `clogger stop` - Stop the daemon
-- `clogger status` - Show active sessions and recordings
-- `clogger export <session-id> --output file.md` - Manual export
-- `clogger clean` - Clean up stale state
+- `stenobot init` - Generate `~/.stenobot/config.yaml` with all defaults and comments
+- `stenobot start` - Start the monitoring daemon (returns immediately; auto-generates config if missing)
+- `stenobot stop` - Stop the daemon
+- `stenobot status` - Show active sessions and recordings
+- `stenobot export <session-id> --output file.md` - Manual export
+- `stenobot clean` - Clean up stale state
 
 Clean options:
 - `--recordings <days>` - Remove recordings older than N days
@@ -42,7 +42,7 @@ All recording paths are resolved as follows:
 - `@` prefix is stripped (VSCode @-mention compatibility)
 - `.md` extension is added if missing
 
-**Workspace Detection**: For relative paths, clogger attempts to find your project workspace by:
+**Workspace Detection**: For relative paths, stenobot attempts to find your project workspace by:
 1. Extracting the project name from the session folder
 2. Searching common locations (`~/hub/<project>`, `~/hub/*/<project>`, `~/<project>`)
 3. Verifying with `.git` directory if present

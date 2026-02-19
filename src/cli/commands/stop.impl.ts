@@ -22,14 +22,14 @@ export async function stopImpl(
       return;
     }
   } catch {
-    this.process.stderr.write("No running clogger daemon found.\n");
+    this.process.stderr.write("No running stenobot daemon found.\n");
     return;
   }
 
   try {
     process.kill(pid, "SIGTERM");
     await fs.rm(pidFile, { force: true });
-    this.process.stdout.write("clogger daemon stopped.\n");
+    this.process.stdout.write("stenobot daemon stopped.\n");
   } catch {
     this.process.stderr.write(
       `Failed to stop daemon (PID ${pid}). It may have already exited.\n`,
