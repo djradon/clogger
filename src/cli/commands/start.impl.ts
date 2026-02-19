@@ -28,21 +28,41 @@ export async function startImpl(
 
   const config = await loadConfig();
   const pidFile = expandHome(config.daemon.pidFile);
+  const pidDir = nodePath.dirname(pidFile);
+  await fs.mkdir(pidDir, { recursive: true });
 
-  // Check if already running
+  // Exclusively create PID file to prevent dual-start race
   try {
-    const existingPid = await fs.readFile(pidFile, "utf-8");
+    await fs.writeFile(pidFile, "starting", { flag: "wx" });
+  } catch {
+    // File already exists — check if the daemon is genuinely running
     try {
-      process.kill(parseInt(existingPid.trim(), 10), 0);
-      this.process.stdout.write(
-        `clogger daemon is already running (PID: ${existingPid.trim()})\n`,
+      const existing = await fs.readFile(pidFile, "utf-8");
+      const existingPid = parseInt(existing.trim(), 10);
+      if (!isNaN(existingPid)) {
+        try {
+          process.kill(existingPid, 0);
+          this.process.stdout.write(
+            `clogger daemon is already running (PID: ${existingPid})\n`,
+          );
+          return;
+        } catch {
+          // Stale PID — process is gone
+        }
+      }
+    } catch {
+      // Could not read PID file
+    }
+    // Stale or corrupt PID file — clear it and try once more
+    await fs.rm(pidFile, { force: true });
+    try {
+      await fs.writeFile(pidFile, "starting", { flag: "wx" });
+    } catch {
+      this.process.stderr.write(
+        "Could not acquire PID file. Is another `clogger start` running?\n",
       );
       return;
-    } catch {
-      // Stale PID file — process is gone, proceed to start
     }
-  } catch {
-    // No PID file, proceed to start
   }
 
   // Spawn detached child with CLOGGER_DAEMON_MODE=1
@@ -51,9 +71,14 @@ export async function startImpl(
     stdio: "ignore",
     env: { ...this.process.env, CLOGGER_DAEMON_MODE: "1" },
   });
-  child.unref();
 
-  await fs.mkdir(nodePath.dirname(pidFile), { recursive: true });
+  if (child.pid === undefined) {
+    await fs.rm(pidFile, { force: true });
+    this.process.stderr.write("Failed to spawn daemon process.\n");
+    return;
+  }
+
+  child.unref();
   await fs.writeFile(pidFile, String(child.pid), "utf-8");
   this.process.stdout.write(`clogger daemon started (PID: ${child.pid})\n`);
 }

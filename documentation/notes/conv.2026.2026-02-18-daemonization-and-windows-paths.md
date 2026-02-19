@@ -232,3 +232,87 @@ Two quick fixes — update the call site and remove the unused `s` variable:
 **Platform-specific paths** ([src/config.ts](src/config.ts)):
 - `buildConfigTemplate()` detects `process.platform === "win32"` and generates backslash paths in single-quoted YAML strings (no escaping needed) on Windows, forward-slash paths in double-quoted strings on Linux/macOS
 - `DEFAULT_CONFIG` stays with forward slashes (Node.js handles both at runtime regardless of platform)
+
+# User_2026-02-18_2328_58
+
+Does any documentation need updating? Can we do a security review? Any other changes before we do a proper build?
+
+
+
+# claude-sonnet-4.6_2026-02-18_2331_00
+
+Solid findings. Let me break them down by priority:
+
+**Code bugs to fix now:**
+1. `child.pid` may be `undefined` if spawn fails → writes `"undefined"` to PID file
+2. No NaN guard in `stop.impl.ts` after parsing PID
+3. Dual-start race → use exclusive PID file write (`flag: 'wx'`)
+4. Path traversal in `monitor.ts` via `::capture ../../.bashrc` → should clamp to home dir
+
+**Docs to update:**
+- README.md: config.json → config.yaml, add `clogger init`, note `start` daemonizes
+- CLAUDE.md: add `clogger init` to CLI commands list
+- implementation-plan.md: lower priority (spec doc, not end-user facing)
+
+**Defer:**
+- File permission hardening (0600) — `implementation-plan.md` called for it but it's a single-user local tool; not blocking
+- Config existence TOCTOU — benign in practice
+
+Want me to go ahead and fix all four code issues + update README and CLAUDE.md?
+
+# User_2026-02-18_2334_22
+
+I'm not sure about #4 -- theoretically people could put their CLAUDE_CONFIG_DIR anywhere. It doesn't seem like much of a risk anyhow.... doesn't .md get appended?
+
+# claude-sonnet-4.6_2026-02-18_2334_43
+
+Both points are correct — `.md` always gets appended (via `ensureMarkdownExtension`), so `::capture ../../.bashrc` → `../../.bashrc.md`, which is a noop for shell configs. And yes, `CLAUDE_CONFIG_DIR` is a legitimate env var that could put session files anywhere, so clamping to home dir would break valid setups.
+
+The residual risk is narrow: overwriting an existing `.md` file via `::capture ../../../some-important-note.md` — but that's genuinely self-inflicted. Agreed, skip #4.
+
+So the remaining list before the build:
+
+**Fix now:**
+1. `child.pid` undefined → writes `"undefined"` to PID file
+2. NaN guard in `stop.impl.ts`
+3. Dual-start PID race (exclusive write)
+
+**Docs:**
+- README.md: config.yaml, `clogger init`, `start` daemonizes
+- CLAUDE.md: add `clogger init`
+
+Shall I go ahead?
+
+# User_2026-02-18_2335_15
+
+yes
+
+
+
+
+
+
+
+
+
+
+
+# claude-sonnet-4.6_2026-02-18_2338_39
+
+Now CLAUDE.md:
+
+
+
+
+
+# claude-sonnet-4.6_2026-02-18_2343_24
+
+73 tests passing. All done. Summary of changes:
+
+**Code fixes:**
+- [start.impl.ts](src/cli/commands/start.impl.ts): Uses `flag: 'wx'` (exclusive create) on the PID file to prevent dual-start race; explicitly guards `child.pid === undefined` and cleans up if spawn fails
+- [stop.impl.ts](src/cli/commands/stop.impl.ts): `isNaN` guard after `parseInt` — corrupt PID file is removed with a clear message instead of crashing
+
+**Docs:**
+- [README.md](README.md): Config section replaced (JSON → YAML, `clogger init` introduced, full config block replaced with "run `clogger init` to see it"); `start` noted as returning immediately; `clogger init` added to CLI table
+- [CLAUDE.md](CLAUDE.md): `clogger init` added to CLI commands list

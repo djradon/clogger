@@ -16,6 +16,11 @@ export async function stopImpl(
   try {
     const raw = await fs.readFile(pidFile, "utf-8");
     pid = parseInt(raw.trim(), 10);
+    if (isNaN(pid)) {
+      this.process.stderr.write("PID file is corrupt. Removing it.\n");
+      await fs.rm(pidFile, { force: true });
+      return;
+    }
   } catch {
     this.process.stderr.write("No running clogger daemon found.\n");
     return;

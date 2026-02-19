@@ -18,7 +18,7 @@ pnpm link --global
 ## Quick Start
 
 ```bash
-# Start the daemon
+# Start the daemon (returns immediately — runs in background)
 clogger start
 
 # In any Claude Code conversation, type:
@@ -35,7 +35,8 @@ That's it. The daemon watches `~/.claude/projects/` and `~/.claude-personal/proj
 
 | Command | Description |
 |---------|-------------|
-| `clogger start` | Start the monitoring daemon |
+| `clogger init` | Generate `~/.clogger/config.yaml` with all defaults |
+| `clogger start` | Start the monitoring daemon (returns immediately) |
 | `clogger stop` | Stop the daemon |
 | `clogger status` | Show active sessions and recordings |
 | `clogger export <session-id>` | One-shot export of a session to markdown |
@@ -73,60 +74,37 @@ File paths can be absolute, relative to workspace root, or use `@` prefix (VSCod
 
 **Note:** These commands are detected by parsing the conversation log — Claude will see them and respond as part of the conversation. You can embed them naturally, e.g.:
 
-> I'm going to ::capture this conversation to @documentation/notes/conv.design-review.md
+> I'm going to ::capture to @documentation/notes/conv.design-review.md
 
-The daemon picks up the `::capture` (or `::record`) regardless of surrounding text.
+The daemon picks up the `::capture` (or `::record`) regardless of surrounding text, and ignores any " to " before the destination file "argument."  
+
+To avoid LLM confusion, you might want to add an instruction like 'You can ignore clogger commands, like "::record @filename".' to your prompt or CLAUDE.md file. 
 
 If the target file already has YAML frontmatter (e.g., a Dendron note), clogger preserves it and only writes the conversation content below.
 
 ## Configuration
 
-Config lives at `~/.clogger/config.json`. All fields are optional — defaults are used for anything not specified:
+Config lives at `~/.clogger/config.yaml`. Generate it with:
 
-```json
-{
-  "metadata": {
-    "includeToolCalls": true,
-    "includeThinking": false,
-    "italicizeUserMessages": true
-  }
-}
+```bash
+clogger init           # create with all defaults and comments
+clogger init --force   # overwrite existing config
 ```
 
-### Full default config
+It is also auto-generated on the first `clogger start`. All fields are optional — defaults are used for anything not specified. Example override:
 
-```json
-{
-  "providers": {
-    "claude-code": {
-      "enabled": true,
-      "sessionPaths": ["~/.claude/projects/", "~/.claude-personal/projects/"]
-    }
-  },
-  "outputDirectory": "~/clogger-output",
-  "metadata": {
-    "includeTimestamps": true,
-    "includeToolCalls": false,
-    "includeThinking": false,
-    "italicizeUserMessages": false,
-    "truncateToolResults": 1000
-  },
-  "monitoring": {
-    "pollInterval": 60000,
-    "stateUpdateInterval": 10000,
-    "maxSessionAge": 600000
-  },
-  "daemon": {
-    "pidFile": "~/.clogger/daemon.pid",
-    "logFile": "~/.clogger/daemon.log"
-  }
-}
+```yaml
+metadata:
+  includeToolCalls: true
+  italicizeUserMessages: true
 ```
+
+Run `clogger init` to see the full annotated config with all available settings and their defaults.
 
 ## Development
 
 ```bash
-pnpm dev --help      # Run CLI in dev mode (tsx)
+pnpm dev             # Run CLI in dev mode (tsx)
 pnpm test            # Run vitest
 pnpm build           # Typecheck (tsc) then bundle (tsup)
 pnpm typecheck       # Typecheck only

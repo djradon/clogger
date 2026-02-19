@@ -21,7 +21,8 @@ Commands can appear anywhere in the first line of your message.
 
 ### CLI Commands
 
-- `clogger start` - Start the monitoring daemon
+- `clogger init` - Generate `~/.clogger/config.yaml` with all defaults and comments
+- `clogger start` - Start the monitoring daemon (returns immediately; auto-generates config if missing)
 - `clogger stop` - Stop the daemon
 - `clogger status` - Show active sessions and recordings
 - `clogger export <session-id> --output file.md` - Manual export
