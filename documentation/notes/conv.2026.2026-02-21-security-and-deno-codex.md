@@ -249,6 +249,7 @@ Included:
 
 File reference: `documentation/notes/dev.deno-daemon-implementation.md:1`  
 
+<<<<<<< HEAD
 Note: this file currently shows as untracked in git (`??`), so it hasn’t been committed before.
 
 # User_2026-02-21_1717_46
@@ -278,3 +279,6 @@ git push origin main
 ```
 
 If `git push origin main` is rejected, `main` is branch-protected and you’ll need a PR.
+=======
+Note: this file currently shows as untracked in git (`??`), so it hasn’t been committed before.
+>>>>>>> f86cd99 (docs: kato planning)
