@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { stringify as yamlStringify } from "yaml";
 import { formatInTimeZone } from "date-fns-tz";
 import { nanoid } from "nanoid";
 import type { Message, StenobotConfig } from "../types/index.js";
+import { logger } from "../utils/logger.js";
 
 export interface ExportOptions {
   title?: string;
@@ -12,6 +14,28 @@ export interface ExportOptions {
     user?: string;
     assistant?: string;
   };
+}
+
+const RECORDING_DEBUG = process.env["STENOBOT_RECORDING_DEBUG"] === "1";
+
+function shortHash(text: string): string {
+  return createHash("sha1").update(text).digest("hex").slice(0, 12);
+}
+
+function summarizeMessages(messages: Message[]): Array<{
+  id: string;
+  role: Message["role"];
+  timestamp: string;
+  contentChars: number;
+  contentHash: string;
+}> {
+  return messages.slice(0, 10).map((m) => ({
+    id: m.id,
+    role: m.role,
+    timestamp: m.timestamp,
+    contentChars: m.content.length,
+    contentHash: shortHash(m.content),
+  }));
 }
 
 /** Generate Dendron-compatible YAML frontmatter */
@@ -165,9 +189,18 @@ export function renderToString(
   }
 
   let lastRole: string | null = null;
+  let lastRenderedSignature: string | null = null;
 
   for (const message of messages) {
     if (isEmptyMessage(message, options)) continue;
+    const signature = [
+      message.id,
+      message.role,
+      message.timestamp,
+      message.model ?? "",
+      message.content,
+    ].join("\u0000");
+    if (signature === lastRenderedSignature) continue;
 
     const includeHeading = message.role !== lastRole;
     const formatted = formatMessage(message, options, { includeHeading });
@@ -175,6 +208,7 @@ export function renderToString(
     parts.push(formatted);
     parts.push("");
     lastRole = message.role;
+    lastRenderedSignature = signature;
   }
 
   return parts.join("\n");
@@ -213,6 +247,14 @@ export async function exportToMarkdown(
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
   const mode = options.mode ?? "create-or-append";
+  if (RECORDING_DEBUG) {
+    logger.info("Recording debug: export start", {
+      mode,
+      outputPath,
+      messageCount: messages.length,
+      sampleMessages: summarizeMessages(messages),
+    });
+  }
 
   if (mode === "overwrite") {
     // Check if file already has frontmatter — preserve it
@@ -221,10 +263,10 @@ export async function exportToMarkdown(
       const body = renderToString(messages, {
         ...options,
         includeFrontmatter: false,
-      });
+      }).trim();
       await fs.writeFile(
         outputPath,
-        existingFrontmatter + "\n\n" + body,
+        body ? `${existingFrontmatter}\n\n${body}` : `${existingFrontmatter}\n`,
         "utf-8",
       );
     } else {
@@ -246,11 +288,70 @@ export async function exportToMarkdown(
 
   if (fileExists) {
     // Append — no frontmatter, just the messages
-    const content = renderToString(messages, {
+    const rendered = renderToString(messages, {
       ...options,
       includeFrontmatter: false,
     });
-    await fs.appendFile(outputPath, "\n" + content, "utf-8");
+    const content = rendered.trim();
+    if (RECORDING_DEBUG) {
+      logger.info("Recording debug: append render", {
+        outputPath,
+        renderedChars: rendered.length,
+        renderedHash: shortHash(rendered),
+        trimmedChars: content.length,
+        trimmedHash: shortHash(content),
+      });
+    }
+    if (!content) {
+      if (RECORDING_DEBUG) {
+        logger.info("Recording debug: append skipped", {
+          outputPath,
+          reason: "empty-rendered-content",
+        });
+      }
+      return;
+    }
+
+    const existing = await fs.readFile(outputPath, "utf-8");
+    const existingTrimmed = existing.trimEnd();
+    if (RECORDING_DEBUG) {
+      const tailWindow = existingTrimmed.slice(-Math.min(existingTrimmed.length, 4000));
+      logger.info("Recording debug: append compare", {
+        outputPath,
+        existingChars: existing.length,
+        existingTrimmedChars: existingTrimmed.length,
+        existingTailHash: shortHash(tailWindow),
+      });
+    }
+    if (existingTrimmed.endsWith(content)) {
+      if (RECORDING_DEBUG) {
+        logger.info("Recording debug: append skipped", {
+          outputPath,
+          reason: "tail-already-matches-content",
+          contentHash: shortHash(content),
+        });
+      }
+      return;
+    }
+
+    const separator =
+      existing.length === 0
+        ? ""
+        : existing.endsWith("\n\n")
+          ? ""
+          : existing.endsWith("\n")
+            ? "\n"
+            : "\n\n";
+
+    await fs.appendFile(outputPath, separator + content, "utf-8");
+    if (RECORDING_DEBUG) {
+      logger.info("Recording debug: append wrote", {
+        outputPath,
+        separatorChars: separator.length,
+        appendedChars: content.length,
+        appendedHash: shortHash(content),
+      });
+    }
   } else {
     // New file — include frontmatter
     const title = options.title ?? path.basename(outputPath, ".md");

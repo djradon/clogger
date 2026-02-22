@@ -1,16 +1,19 @@
 import { buildApplication, buildRouteMap } from "@stricli/core";
 import { startCommand } from "./commands/start.js";
 import { stopCommand } from "./commands/stop.js";
+import { restartCommand } from "./commands/restart.js";
 import { statusCommand } from "./commands/status.js";
 import { exportCommand } from "./commands/export.js";
 import { cleanCommand } from "./commands/clean.js";
 import { initCommand } from "./commands/init.js";
+import pkg from "../../package.json" with { type: "json" };
 
 const routes = buildRouteMap({
   routes: {
     init: initCommand,
     start: startCommand,
     stop: stopCommand,
+    restart: restartCommand,
     status: statusCommand,
     export: exportCommand,
     clean: cleanCommand,
@@ -23,6 +26,6 @@ const routes = buildRouteMap({
 export const app = buildApplication(routes, {
   name: "stenobot",
   versionInfo: {
-    currentVersion: "0.1.0",
+    currentVersion: pkg.version,
   },
 });

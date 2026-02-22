@@ -1,6 +1,7 @@
 import type { Provider } from "./base.js";
 import type { StenobotConfig } from "../types/index.js";
 import { ClaudeCodeProvider } from "./claude-code/index.js";
+import { CodexProvider } from "./codex/index.js";
 
 /** Registry of available LLM providers */
 export class ProviderRegistry {
@@ -9,7 +10,14 @@ export class ProviderRegistry {
   constructor(config?: StenobotConfig) {
     // Register built-in providers with config-driven settings
     const claudeConfig = config?.providers["claude-code"];
-    this.register(new ClaudeCodeProvider(claudeConfig?.sessionPaths));
+    if (claudeConfig?.enabled ?? true) {
+      this.register(new ClaudeCodeProvider(claudeConfig?.sessionPaths));
+    }
+
+    const codexConfig = config?.providers["codex"];
+    if (codexConfig?.enabled ?? true) {
+      this.register(new CodexProvider(codexConfig?.sessionPaths));
+    }
   }
 
   register(provider: Provider): void {

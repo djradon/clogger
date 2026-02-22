@@ -1,6 +1,6 @@
 {
   "name": "stenobot",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Chat logger — monitor and export LLM conversation logs to markdown",
   "type": "module",
   "bin": {
@@ -29,9 +29,13 @@
     "claude",
     "dendron"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dendron-io/stenobot.git"
+  },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.10"
   },
   "dependencies": {
     "@stricli/core": "^1.2.5",
